@@ -1,0 +1,150 @@
+<%- include('../partials/site-head', { title: '', navActive: 'home' }) %>
+
+<section class="hero">
+  <div class="container hero__inner">
+    <span class="hero__badge"><span class="dot"></span> Assistência técnica · Curitiba</span>
+    <h1>Hardware, periféricos e <span class="grad-text">assistência especializada</span>.</h1>
+    <p class="hero__sub">
+      Da peça de reposição ao setup completo: a GLTechCWB fornece, monta e mantém
+      o seu computador com atendimento direto e preço justo.
+    </p>
+    <div class="hero__actions">
+      <a href="/produtos" class="btn btn--primary">
+        Ver produtos
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </a>
+      <a href="#destaques" class="btn btn--ghost">Ver destaques</a>
+    </div>
+    <div class="hero__stats">
+      <div class="stat">
+        <span class="stat__value"><%= productCount %></span>
+        <span class="stat__label">itens no catálogo</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value"><%= categoryCount %></span>
+        <span class="stat__label">categorias</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value">100%</span>
+        <span class="stat__label">com garantia</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<% if (categories.length) { %>
+<section class="section" id="categorias">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Catálogo</span>
+        <h2 class="section-title">Navegue por categoria</h2>
+      </div>
+    </div>
+    <div class="categories-grid">
+      <% categories.forEach(function(cat) { %>
+        <a class="category-card" href="/categoria/<%= cat.slug %>">
+          <span class="category-card__icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>
+          </span>
+          <span class="category-card__name"><%= cat.name %></span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (featured.length) { %>
+<section class="section" id="destaques">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Selecionados para você</span>
+        <h2 class="section-title">Destaques da loja</h2>
+      </div>
+      <a href="/produtos" class="section-link">Ver todos →</a>
+    </div>
+    <div class="products-grid">
+      <% featured.forEach(function(p) { %>
+        <%- include('../partials/product-card', { p: p }) %>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<% if (latest.length) { %>
+<section class="section" id="novidades">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Recém-chegados</span>
+        <h2 class="section-title">Últimos lançamentos</h2>
+      </div>
+    </div>
+    <div class="products-grid">
+      <% latest.forEach(function(p) { %>
+        <%- include('../partials/product-card', { p: p }) %>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section">
+  <div class="container">
+    <div class="benefits-grid">
+      <div class="benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1zM14 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.2"/><circle cx="17.5" cy="18.5" r="2.2"/></svg>
+        <div>
+          <h3>Entrega rápida</h3>
+          <p>Envio para todo o Brasil e entrega no mesmo dia em Curitiba.</p>
+        </div>
+      </div>
+      <div class="benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div>
+          <h3>Garantia real</h3>
+          <p>Produtos testados e com nota fiscal. Sem surpresa na pós-venda.</p>
+        </div>
+      </div>
+      <div class="benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <div>
+          <h3>Pagamento facilitado</h3>
+          <p>Pix, cartão de crédito e boleto. Parcele em até 12x.</p>
+        </div>
+      </div>
+      <div class="benefit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18v3h3l5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3z"/></svg>
+        <div>
+          <h3>Suporte técnico</h3>
+          <p>Montagem, upgrade e manutenção feitos por quem entende.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%
+  const waNumber = typeof contactWhatsapp !== 'undefined' ? contactWhatsapp : '';
+  const mail = typeof contactEmail !== 'undefined' ? contactEmail : '';
+  const ctaHref = waNumber ? whatsappUrl(waNumber, 'Olá! Preciso de ajuda com meu computador.') : (mail ? 'mailto:' + mail : '');
+%>
+<section class="section">
+  <div class="container">
+    <div class="cta-banner">
+      <div>
+        <span class="eyebrow">Assistência técnica</span>
+        <h2>Seu computador precisa de um upgrade?</h2>
+        <p>Fale com a nossa equipe: diagnóstico honesto, orçamento sem compromisso e serviço com garantia.</p>
+      </div>
+      <% if (ctaHref) { %>
+        <a href="<%= ctaHref %>" <%= waNumber ? 'target="_blank" rel="noopener"' : '' %> class="btn btn--primary">Falar com a gente</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/site-foot') %>

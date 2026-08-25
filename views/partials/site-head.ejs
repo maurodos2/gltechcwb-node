@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' && title ? title + ' · GLTechCWB' : 'GLTechCWB — Tecnologia, Hardware e Assistência Técnica' %></title>
+  <meta name="description" content="<%= typeof metaDescription !== 'undefined' && metaDescription ? metaDescription : 'Loja de informática em Curitiba: hardware, periféricos e assistência técnica especializada.' %>" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b2e1c'/%3E%3Cpath d='M44 24a14 14 0 1 0 4 10h-12' stroke='%233ddc84' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <svg class="brand__mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <rect width="64" height="64" rx="14" fill="#0b2e1c"/>
+          <path d="M44 24a14 14 0 1 0 4 10h-12" stroke="#3ddc84" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+        <span>GL<span class="brand__tech">Tech</span>CWB</span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+
+      <nav class="site-nav" aria-label="Menu principal">
+        <a href="/" class="<%= typeof navActive !== 'undefined' && navActive === 'home' ? 'is-active' : '' %>">Início</a>
+        <a href="/produtos" class="<%= typeof navActive !== 'undefined' && ['catalog', 'product'].includes(navActive) ? 'is-active' : '' %>">Produtos</a>
+        <% if (typeof navCategories !== 'undefined' && navCategories.length) { %>
+          <div class="nav-drop">
+            <button type="button">Categorias
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="nav-drop__menu">
+              <% navCategories.forEach(function(cat) { %>
+                <a href="/categoria/<%= cat.slug %>"><%= cat.name %></a>
+              <% }) %>
+              <a href="/produtos"><strong>Ver tudo</strong></a>
+            </div>
+          </div>
+        <% } %>
+      </nav>
+
+      <div class="header-search">
+        <form action="/produtos" method="GET" role="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input type="search" name="q" placeholder="Buscar produtos..." aria-label="Buscar produtos" value="<%= typeof searchValue !== 'undefined' ? searchValue : '' %>" />
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">

@@ -1,0 +1,40 @@
+<%- include('../../partials/admin-head', { title: category ? 'Editar categoria' : 'Nova categoria' }) %>
+
+<h1><%= category ? 'Editar categoria' : 'Nova categoria' %></h1>
+
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert alert--error"><%= error %></div>
+<% } %>
+
+<form
+  class="admin-form"
+  method="POST"
+  action="<%= category && category._id ? '/admin/categories/' + category._id + '?_method=PUT' : '/admin/categories' %>"
+>
+  <label>
+    Nome
+    <input type="text" name="name" required value="<%= category ? category.name : '' %>" />
+  </label>
+
+  <label>
+    Descrição
+    <textarea name="description" rows="4"><%= category ? category.description : '' %></textarea>
+  </label>
+
+  <label>
+    Ordem de exibição
+    <input type="number" name="order" value="<%= category ? category.order : 0 %>" />
+  </label>
+
+  <label class="checkbox-label">
+    <input type="checkbox" name="active" <%= !category || category.active ? 'checked' : '' %> />
+    Categoria ativa
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn--primary">Salvar</button>
+    <a class="btn" href="/admin/categories">Cancelar</a>
+  </div>
+</form>
+
+<%- include('../../partials/admin-foot') %>

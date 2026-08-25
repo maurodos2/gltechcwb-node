@@ -1,0 +1,160 @@
+<%- include('../partials/site-head', { title: product.seoTitle || product.name, navActive: 'product', metaDescription: product.seoDescription || product.shortDescription }) %>
+
+<nav class="breadcrumb container" aria-label="Você está aqui">
+  <a href="/">Início</a>
+  <span class="sep">/</span>
+  <a href="/produtos">Produtos</a>
+  <% if (product.category) { %>
+    <span class="sep">/</span>
+    <a href="/categoria/<%= product.category.slug %>"><%= product.category.name %></a>
+  <% } %>
+  <span class="sep">/</span>
+  <span class="current"><%= product.name %></span>
+</nav>
+
+<div class="container">
+  <div class="product-layout">
+    <div class="gallery">
+      <div class="gallery__main">
+        <% if (product.images && product.images.length) { %>
+          <img src="<%= product.images[0] %>" alt="<%= product.name %>" />
+        <% } else { %>
+          <img src="/img/placeholder.svg" alt="" />
+        <% } %>
+      </div>
+      <% if (product.images && product.images.length > 1) { %>
+        <div class="gallery__thumbs">
+          <% product.images.forEach(function(img, i) { %>
+            <button type="button" class="gallery__thumb <%= i === 0 ? 'is-active' : '' %>">
+              <img src="<%= img %>" alt="<%= product.name %> — imagem <%= i + 1 %>" loading="lazy" />
+            </button>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="pdp-info">
+      <span class="pdp-info__category">
+        <% if (product.category) { %><a href="/categoria/<%= product.category.slug %>"><%= product.category.name %></a><% } else { %>Produto<% } %>
+      </span>
+      <h1><%= product.name %></h1>
+
+      <div class="pdp-meta">
+        <% if (product.brand) { %><span>Marca: <strong><%= product.brand %></strong></span><% } %>
+        <span>SKU: <%= product.sku %></span>
+        <% if (product.type === 'servico') { %><span>Serviço prestado em loja</span><% } %>
+      </div>
+
+      <% if (product.hasVariants && product.variants.length) { %>
+        <script id="variant-data" type="application/json"><%- JSON.stringify(product.variants) %></script>
+        <div class="pdp-price">
+          <div class="price">
+            <span class="price__current" data-variant-price><%= formatPrice(product.variants[0].promoPrice || product.variants[0].price) %></span>
+            <span class="price__old" data-variant-old hidden></span>
+          </div>
+          <p class="stock-status stock-status--in" data-variant-stock><span class="dot"></span></p>
+        </div>
+        <div>
+          <span class="variants-label">Escolha a opção:</span>
+          <div class="variant-list" style="margin-top:10px;">
+            <% product.variants.forEach(function(v, i) { %>
+              <button type="button" class="variant-chip" data-index="<%= i %>" <%= v.stock <= 0 ? 'disabled title="Sem estoque"' : '' %>>
+                <%= v.name %>
+              </button>
+            <% }) %>
+          </div>
+        </div>
+      <% } else { %>
+        <% const hasPromo = product.promoPrice && product.promoPrice > 0; %>
+        <div class="pdp-price">
+          <div class="price">
+            <% if (hasPromo) { %><span class="price__old"><%= formatPrice(product.price) %></span><% } %>
+            <span class="price__current <%= hasPromo ? 'price__current--promo' : '' %>"><%= formatPrice(effectivePrice(product)) %></span>
+          </div>
+          <% if (hasPromo) { %>
+            <p class="text-muted" style="font-size:.88rem;margin:6px 0 0;">
+              Economize <%= formatPrice(product.price - product.promoPrice) %>
+            </p>
+          <% } %>
+        </div>
+        <% const isService = product.type === 'servico'; %>
+        <p class="stock-status <%= isService || product.stock > 0 ? 'stock-status--in' : 'stock-status--out' %>">
+          <span class="dot"></span>
+          <% if (isService) { %>
+            Disponível mediante agendamento
+          <% } else if (product.stock > 0) { %>
+            Em estoque (<%= product.stock %> un.)
+          <% } else { %>
+            Produto esgotado
+          <% } %>
+        </p>
+      <% } %>
+
+      <% if (product.shortDescription) { %>
+        <p class="text-muted"><%= product.shortDescription %></p>
+      <% } %>
+
+      <%
+        const waNumber = typeof contactWhatsapp !== 'undefined' ? contactWhatsapp : '';
+        const waText = 'Olá! Tenho interesse no produto: ' + product.name + ' (' + product.sku + ').';
+        const waHref = waNumber ? whatsappUrl(waNumber, waText) : '';
+        const available = product.type === 'servico' ? true : (!product.hasVariants && product.stock > 0);
+      %>
+      <% if (available && waHref) { %>
+        <div class="pdp-actions">
+          <a class="btn btn--primary" href="<%= waHref %>" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.2 1.2-1.7 1.2-.4.1-1 .1-1.6-.1a13 13 0 0 1-5.9-5.2c-.6-1-.9-2-.8-2.8.1-.6.5-1.4 1-1.7.2-.2.5-.2.7-.2h.5c.2 0 .4 0 .5.4l.8 1.8c.1.2 0 .4-.1.6l-.4.5c-.1.2-.3.3-.1.6.5.9 1.4 1.8 2.4 2.3.3.2.5.1.6-.1l.6-.7c.2-.2.4-.2.6-.1l1.7.9c.3.1.4.3.4.4 0 .2 0 .7-.2 1z"/></svg>
+            Chamar no WhatsApp
+          </a>
+          <a class="btn btn--ghost" href="/produtos">← Continuar navegando</a>
+        </div>
+      <% } else { %>
+        <div class="pdp-actions">
+          <a class="btn btn--ghost" href="/produtos">← Continuar navegando</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (product.description) { %>
+    <section class="pdp-section">
+      <h2>Descrição</h2>
+      <div class="pdp-description"><%= product.description %></div>
+    </section>
+  <% } %>
+
+  <% const specEntries = product.specs ? Array.from(product.specs.entries()) : []; %>
+  <% if (specEntries.length) { %>
+    <section class="pdp-section">
+      <h2>Especificações técnicas</h2>
+      <table class="specs-table">
+        <tbody>
+          <% specEntries.forEach(function(entry) { %>
+            <tr>
+              <th scope="row"><%= entry[0] %></th>
+              <td><%= entry[1] %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  <% } %>
+
+  <% if (related.length) { %>
+    <section class="pdp-section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Quem viu, viu também</span>
+          <h2 class="section-title" style="font-size:1.3rem;">Produtos relacionados</h2>
+        </div>
+      </div>
+      <div class="products-grid">
+        <% related.forEach(function(p) { %>
+          <%- include('../partials/product-card', { p: p }) %>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</div>
+
+<%- include('../partials/site-foot') %>

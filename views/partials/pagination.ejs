@@ -1,0 +1,50 @@
+<%
+  const buildPageUrl = (page) => {
+    const params = new URLSearchParams();
+    if (typeof query !== 'undefined') {
+      if (query.q) params.set('q', query.q);
+      if (query.ordem && query.ordem !== 'recentes') params.set('ordem', query.ordem);
+    }
+    if (page > 1) params.set('page', String(page));
+    const qs = params.toString();
+    return qs ? baseUrl + '?' + qs : baseUrl;
+  };
+  const current = pagination.page;
+  const total = Math.max(pagination.pages, 1);
+  let start = Math.max(1, current - 2);
+  const end = Math.min(total, start + 4);
+  start = Math.max(1, end - 4);
+%>
+<% if (total > 1) { %>
+<nav class="pagination" aria-label="Paginação">
+  <% if (current > 1) { %>
+    <a class="page-btn" href="<%= buildPageUrl(current - 1) %>" aria-label="Página anterior">‹</a>
+  <% } else { %>
+    <span class="page-btn" disabled>‹</span>
+  <% } %>
+
+  <% if (start > 1) { %>
+    <a class="page-btn" href="<%= buildPageUrl(1) %>">1</a>
+    <% if (start > 2) { %><span class="page-ellipsis">…</span><% } %>
+  <% } %>
+
+  <% for (let i = start; i <= end; i++) { %>
+    <% if (i === current) { %>
+      <span class="page-btn is-current"><%= i %></span>
+    <% } else { %>
+      <a class="page-btn" href="<%= buildPageUrl(i) %>"><%= i %></a>
+    <% } %>
+  <% } %>
+
+  <% if (end < total) { %>
+    <% if (end < total - 1) { %><span class="page-ellipsis">…</span><% } %>
+    <a class="page-btn" href="<%= buildPageUrl(total) %>"><%= total %></a>
+  <% } %>
+
+  <% if (current < total) { %>
+    <a class="page-btn" href="<%= buildPageUrl(current + 1) %>" aria-label="Próxima página">›</a>
+  <% } else { %>
+    <span class="page-btn" disabled>›</span>
+  <% } %>
+</nav>
+<% } %>

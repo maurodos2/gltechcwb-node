@@ -1,0 +1,77 @@
+<%- include('../partials/site-head', { title: pageTitle, navActive: 'catalog', searchValue: q }) %>
+
+<nav class="breadcrumb container" aria-label="Você está aqui">
+  <a href="/">Início</a>
+  <span class="sep">/</span>
+  <% if (currentCategory) { %>
+    <a href="/produtos">Produtos</a>
+    <span class="sep">/</span>
+    <span class="current"><%= currentCategory.name %></span>
+  <% } else if (q) { %>
+    <a href="/produtos">Produtos</a>
+    <span class="sep">/</span>
+    <span class="current">Busca</span>
+  <% } else { %>
+    <span class="current">Produtos</span>
+  <% } %>
+</nav>
+
+<div class="page-head container">
+  <h1><%= pageTitle %></h1>
+  <% if (typeof pageDescription !== 'undefined' && pageDescription) { %>
+    <p><%= pageDescription %></p>
+  <% } %>
+</div>
+
+<div class="section">
+  <div class="container catalog-layout">
+    <aside class="filters">
+      <span class="filters__title">Categorias</span>
+      <a href="/produtos<%= q ? '?q=' + encodeURIComponent(q) : '' %>" class="filter-link <%= !currentCategory ? 'is-active' : '' %>">
+        Todas
+      </a>
+      <% categories.forEach(function(cat) { %>
+        <a href="/categoria/<%= cat.slug %>" class="filter-link <%= currentCategory && currentCategory._id.equals(cat._id) ? 'is-active' : '' %>">
+          <%= cat.name %>
+        </a>
+      <% }) %>
+    </aside>
+
+    <div>
+      <div class="catalog-toolbar">
+        <span class="catalog-toolbar__count">
+          <%= pagination.total === 0 ? 'Nenhum produto encontrado' : pagination.total + (pagination.total === 1 ? ' produto' : ' produtos') %><%= q ? ' para "' + q + '"' : '' %>
+        </span>
+        <form method="GET" action="<%= baseUrl %>" class="sort-select">
+          <% if (q) { %><input type="hidden" name="q" value="<%= q %>" /><% } %>
+          <label for="ordem">Ordenar por</label>
+          <select name="ordem" id="ordem" data-auto-submit>
+            <option value="recentes" <%= sortKey === 'recentes' ? 'selected' : '' %>>Mais recentes</option>
+            <option value="nome-asc" <%= sortKey === 'nome-asc' ? 'selected' : '' %>>Nome (A–Z)</option>
+            <option value="preco-asc" <%= sortKey === 'preco-asc' ? 'selected' : '' %>>Menor preço</option>
+            <option value="preco-desc" <%= sortKey === 'preco-desc' ? 'selected' : '' %>>Maior preço</option>
+          </select>
+        </form>
+      </div>
+
+      <% if (products.length) { %>
+        <div class="products-grid">
+          <% products.forEach(function(p) { %>
+            <%- include('../partials/product-card', { p: p }) %>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4M8.5 11h5"/></svg>
+          <h3>Nada por aqui...</h3>
+          <p class="text-muted">Tente ajustar a busca ou explorar outra categoria.</p>
+          <p><a class="btn btn--ghost btn--sm" href="/produtos">Ver todos os produtos</a></p>
+        </div>
+      <% } %>
+
+      <%- include('../partials/pagination', { baseUrl: baseUrl, query: { q: q, ordem: sortKey }, pagination: pagination }) %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

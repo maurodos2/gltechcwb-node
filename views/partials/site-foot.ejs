@@ -1,0 +1,63 @@
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/">
+            <svg class="brand__mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <rect width="64" height="64" rx="14" fill="#0b2e1c"/>
+              <path d="M44 24a14 14 0 1 0 4 10h-12" stroke="#3ddc84" stroke-width="6" stroke-linecap="round"/>
+            </svg>
+            <span>GL<span class="brand__tech">Tech</span>CWB</span>
+          </a>
+          <p>Hardware, periféricos e assistência técnica especializada em Curitiba e região.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Categorias</h4>
+          <ul>
+            <% if (typeof navCategories !== 'undefined') { navCategories.slice(0, 5).forEach(function(cat) { %>
+              <li><a href="/categoria/<%= cat.slug %>"><%= cat.name %></a></li>
+            <% }) } else { %>
+              <li><a href="/produtos">Todos os produtos</a></li>
+            <% } %>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navegação</h4>
+          <ul>
+            <li><a href="/">Início</a></li>
+            <li><a href="/produtos">Produtos</a></li>
+            <li><a href="#destaques">Destaques</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Atendimento</h4>
+          <ul>
+            <% if (typeof contactWhatsapp !== 'undefined' && contactWhatsapp) { %>
+              <li><a href="<%= whatsappUrl(contactWhatsapp, 'Olá! Vim pelo site da GLTechCWB.') %>" target="_blank" rel="noopener">WhatsApp</a></li>
+            <% } %>
+            <% if (typeof contactEmail !== 'undefined' && contactEmail) { %>
+              <li><a href="mailto:<%= contactEmail %>"><%= contactEmail %></a></li>
+            <% } %>
+            <% if (!(typeof contactWhatsapp !== 'undefined' && contactWhatsapp) && !(typeof contactEmail !== 'undefined' && contactEmail)) { %>
+              <li><span class="text-muted">Contato em breve</span></li>
+            <% } %>
+            <li><a href="/admin">Área do administrador</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© <%= new Date().getFullYear() %> GLTechCWB. Todos os direitos reservados.</span>
+        <span>Curitiba · PR</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/site.js"></script>
+</body>
+</html>

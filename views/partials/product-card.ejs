@@ -1,0 +1,46 @@
+<%
+  const cardEff = effectivePrice(p);
+  const hasPromo = !p.hasVariants && p.promoPrice && p.promoPrice > 0;
+  const isService = p.type === 'servico';
+  const outOfStock = !isService && !p.hasVariants && p.stock <= 0;
+%>
+<article class="product-card">
+  <div class="product-card__media">
+    <div class="badges">
+      <% if (hasPromo) { %><span class="badge badge--promo">Promoção</span><% } %>
+      <% if (isService) { %><span class="badge badge--service">Serviço</span><% } %>
+      <% if (outOfStock) { %><span class="badge badge--out">Esgotado</span><% } %>
+    </div>
+    <a href="/produto/<%= p.slug %>" aria-label="<%= p.name %>">
+      <% if (p.images && p.images.length) { %>
+        <img src="<%= p.images[0] %>" alt="<%= p.name %>" loading="lazy" />
+      <% } else { %>
+        <span class="ph"><img src="/img/placeholder.svg" alt="" loading="lazy" /></span>
+      <% } %>
+    </a>
+  </div>
+  <div class="product-card__body">
+    <% if (p.category) { %>
+      <span class="product-card__category"><%= p.category.name %></span>
+    <% } %>
+    <h3 class="product-card__name"><a href="/produto/<%= p.slug %>"><%= p.name %></a></h3>
+    <div class="product-card__footer">
+      <% if (p.hasVariants) { %>
+        <% const minP = minVariantPrice(p); %>
+        <% if (minP !== null) { %>
+          <div class="price">
+            <span class="price__from">a partir de</span>
+            <span class="price__current"><%= formatPrice(minP) %></span>
+          </div>
+        <% } else { %>
+          <span class="text-muted">Consulte opções</span>
+        <% } %>
+      <% } else if (cardEff !== null) { %>
+        <div class="price">
+          <% if (hasPromo) { %><span class="price__old"><%= formatPrice(p.price) %></span><% } %>
+          <span class="price__current <%= hasPromo ? 'price__current--promo' : '' %>"><%= formatPrice(cardEff) %></span>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</article>

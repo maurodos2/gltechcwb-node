@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar · Admin GLTechCWB</title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body class="login-page">
+  <form class="login-box" method="POST" action="/admin/login">
+    <h1>GLTechCWB</h1>
+    <p class="login-box__subtitle">Painel administrativo</p>
+
+    <% if (error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+
+    <label>
+      E-mail
+      <input type="email" name="email" required autofocus />
+    </label>
+
+    <label>
+      Senha
+      <input type="password" name="password" required />
+    </label>
+
+    <button type="submit">Entrar</button>
+  </form>
+</body>
+</html>

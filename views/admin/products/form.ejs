@@ -1,0 +1,102 @@
+<%- include('../../partials/admin-head', { title: product ? 'Editar produto' : 'Novo produto' }) %>
+
+<h1><%= product ? 'Editar produto' : 'Novo produto' %></h1>
+
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert alert--error"><%= error %></div>
+<% } %>
+
+<form
+  class="admin-form"
+  method="POST"
+  enctype="multipart/form-data"
+  action="<%= product && product._id ? '/admin/products/' + product._id + '?_method=PUT' : '/admin/products' %>"
+>
+  <label>
+    Nome
+    <input type="text" name="name" required value="<%= product ? product.name : '' %>" />
+  </label>
+
+  <label>
+    SKU
+    <input type="text" name="sku" required value="<%= product ? product.sku : '' %>" />
+  </label>
+
+  <label>
+    Categoria
+    <select name="category" required>
+      <option value="">Selecione...</option>
+      <% categories.forEach(function(c) { %>
+        <option value="<%= c._id %>"
+          <%= product && product.category && (product.category._id || product.category).toString() === c._id.toString() ? 'selected' : '' %>>
+          <%= c.name %>
+        </option>
+      <% }) %>
+    </select>
+  </label>
+
+  <label>
+    Tipo
+    <select name="type">
+      <option value="produto" <%= !product || product.type === 'produto' ? 'selected' : '' %>>Produto (com estoque)</option>
+      <option value="servico" <%= product && product.type === 'servico' ? 'selected' : '' %>>Serviço (sem estoque)</option>
+    </select>
+  </label>
+
+  <label>
+    Marca
+    <input type="text" name="brand" value="<%= product ? product.brand : '' %>" />
+  </label>
+
+  <div class="form-row">
+    <label>
+      Preço (R$)
+      <input type="number" step="0.01" min="0" name="price" required value="<%= product ? product.price : '' %>" />
+    </label>
+
+    <label>
+      Preço promocional (R$)
+      <input type="number" step="0.01" min="0" name="promoPrice" value="<%= product && product.promoPrice ? product.promoPrice : '' %>" />
+    </label>
+
+    <label>
+      Estoque
+      <input type="number" min="0" name="stock" required value="<%= product ? product.stock : 0 %>" />
+    </label>
+  </div>
+
+  <label>
+    Descrição curta
+    <input type="text" name="shortDescription" maxlength="300" value="<%= product ? product.shortDescription : '' %>" />
+  </label>
+
+  <label>
+    Descrição completa
+    <textarea name="description" rows="6"><%= product ? product.description : '' %></textarea>
+  </label>
+
+  <label>
+    Imagens (até 6)
+    <input type="file" name="images" accept="image/*" multiple />
+  </label>
+
+  <% if (product && product.images && product.images.length > 0) { %>
+    <div class="image-preview">
+      <% product.images.forEach(function(img) { %>
+        <img src="<%= img %>" alt="" />
+      <% }) %>
+    </div>
+  <% } %>
+
+  <label class="checkbox-label">
+    <input type="checkbox" name="active" <%= !product || product.active ? 'checked' : '' %> />
+    Produto ativo (visível na loja)
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn--primary">Salvar</button>
+    <a class="btn" href="/admin/products">Cancelar</a>
+  </div>
+</form>
+
+<%- include('../../partials/admin-foot') %>

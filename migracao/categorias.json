@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Acessórios e Infraestrutura",
+    "slug": "acessorios-e-infraestrutura",
+    "description": "",
+    "order": 1,
+    "active": true
+  },
+  {
+    "name": "Áudio e TV",
+    "slug": "audio-e-tv",
+    "description": "",
+    "order": 2,
+    "active": true
+  },
+  {
+    "name": "Pilhas e Baterias",
+    "slug": "pilhas-e-baterias",
+    "description": "",
+    "order": 3,
+    "active": true
+  },
+  {
+    "name": "Redes e Conectividade",
+    "slug": "redes-e-conectividade",
+    "description": "",
+    "order": 4,
+    "active": true
+  },
+  {
+    "name": "Segurança e Monitoramento",
+    "slug": "seguranca-e-monitoramento",
+    "description": "",
+    "order": 5,
+    "active": true
+  },
+  {
+    "name": "Ferramentas",
+    "slug": "ferramentas",
+    "description": "",
+    "order": 6,
+    "active": true
+  },
+  {
+    "name": "Armazenamento e Memória",
+    "slug": "armazenamento-e-memoria",
+    "description": "",
+    "order": 7,
+    "active": true
+  },
+  {
+    "name": "Periféricos",
+    "slug": "perifericos",
+    "description": "",
+    "order": 8,
+    "active": true
+  },
+  {
+    "name": "Impressoras",
+    "slug": "impressoras",
+    "description": "",
+    "order": 9,
+    "active": true
+  },
+  {
+    "name": "Telefonia e Comunicação",
+    "slug": "telefonia-e-comunicacao",
+    "description": "",
+    "order": 10,
+    "active": true
+  },
+  {
+    "name": "Serviços Técnicos",
+    "slug": "servicos-tecnicos",
+    "description": "",
+    "order": 11,
+    "active": true
+  }
+]

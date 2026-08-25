@@ -1,0 +1,40 @@
+<%- include('../../partials/admin-head', { title: 'Categorias' }) %>
+
+<div class="page-header">
+  <h1>Categorias</h1>
+  <a class="btn btn--primary" href="/admin/categories/new">+ Nova categoria</a>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Slug</th>
+      <th>Ordem</th>
+      <th>Ativa</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% categories.forEach(function(c) { %>
+      <tr>
+        <td><%= c.name %></td>
+        <td><%= c.slug %></td>
+        <td><%= c.order %></td>
+        <td><%= c.active ? 'Sim' : 'Não' %></td>
+        <td class="data-table__actions">
+          <a href="/admin/categories/<%= c._id %>/edit">Editar</a>
+          <form method="POST" action="/admin/categories/<%= c._id %>?_method=DELETE"
+                onsubmit="return confirm('Excluir esta categoria?');">
+            <button type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (categories.length === 0) { %>
+      <tr><td colspan="5">Nenhuma categoria cadastrada ainda.</td></tr>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('../../partials/admin-foot') %>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title + ' · Admin GLTechCWB' : 'Admin GLTechCWB' %></title>
+  <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+  <header class="admin-topbar">
+    <div class="admin-topbar__brand">GLTechCWB · Admin</div>
+    <nav class="admin-topbar__nav">
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/products">Produtos</a>
+      <a href="/admin/categories">Categorias</a>
+    </nav>
+    <form action="/admin/logout" method="POST" class="admin-topbar__logout">
+      <button type="submit">Sair</button>
+    </form>
+  </header>
+  <main class="admin-content">

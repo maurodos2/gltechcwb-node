@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.log
+public/uploads/*
+!public/uploads/.gitkeep
+.DS_Store
+.env
+atlas-credentials.env
+
+
+.env
+atlas-credentials.env

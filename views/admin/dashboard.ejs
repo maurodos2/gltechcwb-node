@@ -1,0 +1,40 @@
+<%- include('../partials/admin-head', { title: 'Dashboard' }) %>
+
+<h1>Dashboard</h1>
+
+<div class="cards-grid">
+  <div class="stat-card">
+    <span class="stat-card__value"><%= productCount %></span>
+    <span class="stat-card__label">Produtos</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-card__value"><%= categoryCount %></span>
+    <span class="stat-card__label">Categorias</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-card__value"><%= orderCount %></span>
+    <span class="stat-card__label">Pedidos</span>
+  </div>
+</div>
+
+<h2>Estoque baixo (≤ 3 unidades)</h2>
+<% if (lowStock.length === 0) { %>
+  <p>Nenhum produto com estoque baixo no momento.</p>
+<% } else { %>
+  <table class="data-table">
+    <thead>
+      <tr><th>Produto</th><th>SKU</th><th>Estoque</th></tr>
+    </thead>
+    <tbody>
+      <% lowStock.forEach(function(p) { %>
+        <tr>
+          <td><a href="/admin/products/<%= p._id %>/edit"><%= p.name %></a></td>
+          <td><%= p.sku %></td>
+          <td><%= p.stock %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('../partials/admin-foot') %>

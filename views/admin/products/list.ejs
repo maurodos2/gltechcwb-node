@@ -1,0 +1,46 @@
+<%- include('../../partials/admin-head', { title: 'Produtos' }) %>
+
+<div class="page-header">
+  <h1>Produtos</h1>
+  <a class="btn btn--primary" href="/admin/products/new">+ Novo produto</a>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>SKU</th>
+      <th>Tipo</th>
+      <th>Categoria</th>
+      <th>Preço</th>
+      <th>Estoque</th>
+      <th>Ativo</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% products.forEach(function(p) { %>
+      <tr>
+        <td><%= p.name %></td>
+        <td><%= p.sku %></td>
+        <td><%= p.type === 'servico' ? 'Serviço' : 'Produto' %></td>
+        <td><%= p.category ? p.category.name : '—' %></td>
+        <td>R$ <%= p.price.toFixed(2) %></td>
+        <td><%= p.type === 'servico' ? '—' : p.stock %></td>
+        <td><%= p.active ? 'Sim' : 'Não' %></td>
+        <td class="data-table__actions">
+          <a href="/admin/products/<%= p._id %>/edit">Editar</a>
+          <form method="POST" action="/admin/products/<%= p._id %>?_method=DELETE"
+                onsubmit="return confirm('Excluir este produto?');">
+            <button type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (products.length === 0) { %>
+      <tr><td colspan="7">Nenhum produto cadastrado ainda.</td></tr>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('../../partials/admin-foot') %>
