@@ -1,0 +1,22 @@
+<%- include('../partials/site-head', { title: 'Pedido realizado!' }) %>
+
+<div class="container order-status-page">
+  <div class="order-status-card">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3ddc84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <h1>Pedido realizado com sucesso!</h1>
+    <p>Seu pagamento foi processado e seu pedido já está sendo preparado.</p>
+
+    <% if (typeof payment_id !== 'undefined' && payment_id) { %>
+      <p class="order-id">ID do pagamento: <strong><%= payment_id %></strong></p>
+    <% } %>
+
+    <p class="text-muted">Você receberá um e-mail de confirmação em breve.</p>
+
+    <div class="order-status-actions">
+      <a href="/produtos" class="btn btn--primary">Continuar comprando</a>
+      <a href="/conta" class="btn btn--ghost">Minha conta</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

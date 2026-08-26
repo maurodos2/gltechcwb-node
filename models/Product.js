@@ -53,11 +53,10 @@ const productSchema = new mongoose.Schema(
       default: '',
     },
 
-    // "produto" tem estoque físico; "servico" (ex: formatação, manutenção)
-    // não tem estoque no sentido tradicional — fica sempre disponível.
+    // Tipo do item: apenas "produto" (produto físico com estoque)
     type: {
       type: String,
-      enum: ['produto', 'servico'],
+      enum: ['produto'],
       default: 'produto',
     },
 

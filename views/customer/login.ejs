@@ -1,0 +1,31 @@
+<%- include('../partials/site-head', { title: 'Entrar', navActive: 'account' }) %>
+
+<div class="container auth-page">
+  <div class="auth-card">
+    <h1>Entrar na sua conta</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/conta/login" class="auth-form">
+      <label>
+        E-mail
+        <input type="email" name="email" required placeholder="seu@email.com" />
+      </label>
+
+      <label>
+        Senha
+        <input type="password" name="password" required minlength="6" />
+      </label>
+
+      <button type="submit" class="btn btn--primary btn--full">Entrar</button>
+    </form>
+
+    <p class="auth-alt">
+      Não tem conta? <a href="/conta/cadastro">Criar conta gratuita</a>
+    </p>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

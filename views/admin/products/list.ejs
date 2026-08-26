@@ -23,10 +23,10 @@
       <tr>
         <td><%= p.name %></td>
         <td><%= p.sku %></td>
-        <td><%= p.type === 'servico' ? 'Serviço' : 'Produto' %></td>
+        <td>Produto</td>
         <td><%= p.category ? p.category.name : '—' %></td>
         <td>R$ <%= p.price.toFixed(2) %></td>
-        <td><%= p.type === 'servico' ? '—' : p.stock %></td>
+        <td><%= p.stock %></td>
         <td><%= p.active ? 'Sim' : 'Não' %></td>
         <td class="data-table__actions">
           <a href="/admin/products/<%= p._id %>/edit">Editar</a>

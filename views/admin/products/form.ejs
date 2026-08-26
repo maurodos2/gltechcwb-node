@@ -38,8 +38,7 @@
   <label>
     Tipo
     <select name="type">
-      <option value="produto" <%= !product || product.type === 'produto' ? 'selected' : '' %>>Produto (com estoque)</option>
-      <option value="servico" <%= product && product.type === 'servico' ? 'selected' : '' %>>Serviço (sem estoque)</option>
+      <option value="produto" selected>Produto (com estoque)</option>
     </select>
   </label>
 

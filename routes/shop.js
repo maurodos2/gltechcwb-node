@@ -88,6 +88,15 @@ router.get('/produto/:slug', async (req, res, next) => {
   }
 });
 
+// GET /carrinho — página do carrinho
+router.get('/carrinho', (req, res) => {
+  const cart = req.session.cart || { items: [] };
+  res.render('shop/cart', {
+    title: 'Carrinho de compras',
+    cart,
+  });
+});
+
 async function renderCatalog(req, res, categorySlug) {
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const sortKey = SORTS[req.query.ordem] ? req.query.ordem : 'recentes';

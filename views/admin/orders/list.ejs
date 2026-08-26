@@ -1,0 +1,50 @@
+<%- include('../../partials/admin-head', { title: 'Pedidos' }) %>
+
+<div class="page-header">
+  <h1>Pedidos</h1>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Pedido</th>
+      <th>Cliente</th>
+      <th>Total</th>
+      <th>Status</th>
+      <th>Data</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% orders.forEach(function(order) { %>
+      <tr>
+        <td><strong>#<%= String(order._id).slice(-8).toUpperCase() %></strong></td>
+        <td><%= order.customer.name %><br/><small><%= order.customer.email %></small></td>
+        <td><%= formatPrice(order.total) %></td>
+        <td>
+          <span class="status-badge status-badge--<%= order.status %>">
+            <% const statusLabels = { pending_payment: 'Aguardando', paid: 'Pago', processing: 'Preparando', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' }; %>
+            <%= statusLabels[order.status] || order.status %>
+          </span>
+        </td>
+        <td><%= new Date(order.createdAt).toLocaleDateString('pt-BR') %></td>
+        <td class="data-table__actions">
+          <a href="/admin/orders/<%= order._id %>">Ver</a>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (orders.length === 0) { %>
+      <tr><td colspan="6">Nenhum pedido ainda.</td></tr>
+    <% } %>
+  </tbody>
+</table>
+
+<% if (pagination.pages > 1) { %>
+  <div class="pagination">
+    <% for (let p = 1; p <= pagination.pages; p++) { %>
+      <a href="?page=<%= p %>" class="<%= p === pagination.page ? 'is-active' : '' %>"><%= p %></a>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('../../partials/admin-foot') %>

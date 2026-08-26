@@ -1,25 +1,29 @@
 {
   "name": "gltechcwb-node",
   "version": "0.1.0",
-  "description": "Loja virtual GLTechCWB - migração do Zoho Commerce para stack própria Node.js/MongoDB",
+  "description": "Loja virtual GLTechCWB — E-commerce com Node.js/MongoDB, Mercado Pago e Render",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node config/seed.js",
-    "import-catalog": "node config/import-catalog.js"
+    "import-catalog": "node config/import-catalog.js",
+    "remove-services": "node config/remove-services.js"
   },
   "dependencies": {
+    "axios": "^1.20.0",
     "bcryptjs": "^2.4.3",
-    "connect-mongo": "^5.1.0",
+    "connect-mongo": "^6.0.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
+    "mercadopago": "^3.5.1",
     "method-override": "^3.0.0",
     "mongodb": "^7.6.0",
     "mongoose": "^8.5.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^9.0.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

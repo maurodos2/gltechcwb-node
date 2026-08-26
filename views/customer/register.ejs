@@ -1,0 +1,46 @@
+<%- include('../partials/site-head', { title: 'Criar conta', navActive: 'account' }) %>
+
+<div class="container auth-page">
+  <div class="auth-card">
+    <h1>Criar sua conta</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/conta/cadastro" class="auth-form">
+      <label>
+        Nome completo *
+        <input type="text" name="name" required placeholder="Seu nome" />
+      </label>
+
+      <label>
+        E-mail *
+        <input type="email" name="email" required placeholder="seu@email.com" />
+      </label>
+
+      <label>
+        Telefone
+        <input type="tel" name="phone" placeholder="(41) 99999-9999" />
+      </label>
+
+      <label>
+        Senha * (mínimo 6 caracteres)
+        <input type="password" name="password" required minlength="6" />
+      </label>
+
+      <label>
+        Confirmar senha *
+        <input type="password" name="passwordConfirm" required minlength="6" />
+      </label>
+
+      <button type="submit" class="btn btn--primary btn--full">Criar conta</button>
+    </form>
+
+    <p class="auth-alt">
+      Já tem conta? <a href="/conta/login">Entrar</a>
+    </p>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

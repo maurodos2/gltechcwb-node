@@ -1,14 +1,12 @@
 <%
   const cardEff = effectivePrice(p);
   const hasPromo = !p.hasVariants && p.promoPrice && p.promoPrice > 0;
-  const isService = p.type === 'servico';
-  const outOfStock = !isService && !p.hasVariants && p.stock <= 0;
+  const outOfStock = !p.hasVariants && p.stock <= 0;
 %>
 <article class="product-card">
   <div class="product-card__media">
     <div class="badges">
       <% if (hasPromo) { %><span class="badge badge--promo">Promoção</span><% } %>
-      <% if (isService) { %><span class="badge badge--service">Serviço</span><% } %>
       <% if (outOfStock) { %><span class="badge badge--out">Esgotado</span><% } %>
     </div>
     <a href="/produto/<%= p.slug %>" aria-label="<%= p.name %>">

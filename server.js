@@ -2,12 +2,12 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const MongoStore = require('connect-mongo').default || require('connect-mongo');
 const methodOverride = require('method-override');
 const path = require('path');
 
 const connectDB = require('./config/db');
-const { requireAdminAuth, attachAdminToLocals } = require('./middleware/auth');
+const { requireAdminAuth, attachAdminToLocals, attachCustomerToLocals } = require('./middleware/auth');
 const Category = require('./models/Category');
 
 const app = express();
@@ -57,6 +57,7 @@ app.use(
 );
 
 app.use(attachAdminToLocals);
+app.use(attachCustomerToLocals);
 
 // Dados compartilhados pelo site público (menu de categorias, contato)
 app.use(async (req, res, next) => {
@@ -74,15 +75,25 @@ app.use(async (req, res, next) => {
 // ---- Rotas públicas de API ----
 app.use('/api/products', require('./routes/api/products'));
 app.use('/api/categories', require('./routes/api/categories'));
+app.use('/api/cart', require('./routes/api/cart'));
+app.use('/api/shipping', require('./routes/api/shipping'));
+app.use('/api/webhooks', require('./routes/api/webhooks'));
 
 // ---- Site público (vitrine) ----
 app.use('/', require('./routes/shop'));
+
+// ---- Conta do cliente ----
+app.use('/conta', require('./routes/customer'));
+
+// ---- Checkout ----
+app.use('/checkout', require('./routes/checkout'));
 
 // ---- Rotas do admin ----
 app.use('/admin', require('./routes/admin/auth')); // login/logout ficam fora do requireAdminAuth
 app.use('/admin', requireAdminAuth, require('./routes/admin/dashboard'));
 app.use('/admin/products', requireAdminAuth, require('./routes/admin/products'));
 app.use('/admin/categories', requireAdminAuth, require('./routes/admin/categories'));
+app.use('/admin/orders', requireAdminAuth, require('./routes/admin/orders'));
 
 // ---- 404 ----
 app.use((req, res) => {

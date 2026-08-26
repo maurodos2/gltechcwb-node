@@ -1,0 +1,71 @@
+<%- include('../partials/site-head', { title: 'Carrinho de compras', navActive: 'cart' }) %>
+
+<div class="container cart-page">
+  <h1>Carrinho de compras</h1>
+
+  <% if (!cart.items || !cart.items.length) { %>
+    <div class="cart-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <p>Seu carrinho está vazio.</p>
+      <a href="/produtos" class="btn btn--primary">Ver produtos</a>
+    </div>
+  <% } else { %>
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Preço</th>
+          <th>Quantidade</th>
+          <th>Subtotal</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% cart.items.forEach(function(item, index) { %>
+          <tr data-cart-index="<%= index %>">
+            <td>
+              <div class="cart-product-info">
+                <% if (item.image) { %>
+                  <img src="<%= item.image %>" alt="" class="cart-product-img" />
+                <% } else { %>
+                  <img src="/img/placeholder.svg" alt="" class="cart-product-img" />
+                <% } %>
+                <div>
+                  <div class="cart-product-name"><%= item.name %></div>
+                  <div class="cart-product-sku">SKU: <%= item.sku %></div>
+                </div>
+              </div>
+            </td>
+            <td><%= formatPrice(item.unitPrice) %></td>
+            <td>
+              <div class="cart-qty">
+                <button type="button" class="cart-qty-change" data-action="decrease" data-index="<%= index %>">−</button>
+                <span data-qty-display="<%= index %>"><%= item.quantity %></span>
+                <button type="button" class="cart-qty-change" data-action="increase" data-index="<%= index %>">+</button>
+              </div>
+            </td>
+            <td data-subtotal="<%= index %>"><%= formatPrice(item.unitPrice * item.quantity) %></td>
+            <td>
+              <button type="button" class="cart-remove" data-action="remove" data-index="<%= index %>">Remover</button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="cart-summary">
+      <span class="cart-total-label">Total:</span>
+      <span class="cart-total-value" id="cart-total">
+        <%= formatPrice(cart.items.reduce(function(sum, item) { return sum + (item.unitPrice * item.quantity); }, 0)) %>
+      </span>
+    </div>
+
+    <div class="cart-summary" style="margin-top:16px; padding-top:0; border-top:none;">
+      <a href="/produtos" class="btn btn--ghost">← Continuar comprando</a>
+      <a href="/checkout" class="btn btn--primary">Finalizar compra</a>
+    </div>
+  <% } %>
+</div>
+
+<script src="/js/cart.js"></script>
+<%- include('../partials/site-foot') %>

@@ -1,0 +1,16 @@
+<%- include('../partials/site-head', { title: 'Pagamento não realizado' }) %>
+
+<div class="container order-status-page">
+  <div class="order-status-card">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ff6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    <h1>Pagamento não realizado</h1>
+    <p>Houve um problema com o pagamento. Você pode tentar novamente.</p>
+
+    <div class="order-status-actions">
+      <a href="/carrinho" class="btn btn--primary">Ver carrinho</a>
+      <a href="/produtos" class="btn btn--ghost">Continuar comprando</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

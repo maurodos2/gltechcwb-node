@@ -1,0 +1,17 @@
+<%- include('../partials/site-head', { title: 'Pagamento pendente' }) %>
+
+<div class="container order-status-page">
+  <div class="order-status-card">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#f0ad4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <h1>Pagamento pendente</h1>
+    <p>Seu pagamento está sendo processado. Aguarde a confirmação.</p>
+    <p class="text-muted">Você receberá um e-mail quando o pagamento for confirmado.</p>
+
+    <div class="order-status-actions">
+      <a href="/produtos" class="btn btn--primary">Continuar comprando</a>
+      <a href="/conta" class="btn btn--ghost">Minha conta</a>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

@@ -1,76 +1,25 @@
-# GLTechCWB — Esqueleto Node.js
+# GLTechCWB — E-Commerce
 
-Esqueleto inicial para migrar a loja `gltechcwb.com` do Zoho Commerce para uma
-stack própria: **Node.js + Express + MongoDB + EJS**, com painel admin básico.
+Loja virtual GLTechCWB: **Node.js + Express + MongoDB + EJS**, com painel admin, carrinho, checkout e pagamento via Mercado Pago.
 
-## O que já está pronto
+## Funcionalidades
 
-- **Modelos de dados** (`/models`): `Product` (com suporte a variações e specs
-  livres), `Category`, `Admin` (autenticação do painel), `Order` (estrutura
-  para quando o checkout for implementado).
-- **API pública somente leitura** (`/routes/api`): `GET /api/products`,
-  `GET /api/products/:slug`, `GET /api/categories` — para o futuro front-end
-  público consumir.
-- **Painel admin** (`/routes/admin` + `/views/admin`): login com sessão,
-  dashboard com contadores e alerta de estoque baixo, CRUD completo de
-  produtos (com upload de imagens) e categorias.
-- **Autenticação simples por sessão**, senha com hash `bcrypt`, sessão
-  persistida no MongoDB (`connect-mongo`).
+- **Catálogo de produtos** — busca, filtros, paginação, variações e promoções
+- **Carrinho de compras** — sessão do cliente, adicionar/remover/atualizar quantidades
+- **Checkout** — cadastro do cliente, cálculo de frete (ViaCEP/Correios), pagamento (Pix + Cartão via Mercado Pago)
+- **Painel admin** — CRUD de produtos/categorias, gestão de pedidos, dashboard
+- **E-mails transacionais** — confirmação de pedido via Zoho Mail SMTP
 
-## O que ainda falta (próximas etapas)
+## O que ainda falta
 
-- Front-end público (vitrine, página de produto, carrinho, checkout).
-- Integração de pagamento (Pix/cartão) — Mercado Pago, Pagar.me etc.
-- Envio de e-mail transacional (confirmação de pedido).
-- Migração de conteúdo real do Zoho (se houver produtos/páginas já
-  cadastrados de verdade — hoje o site está com conteúdo de template).
-- Deploy (Railway/Render/VPS) + apontamento de DNS no Cloudflare.
-
-## Catálogo migrado do Zoho
-
-A pasta `migracao/` contém o catálogo real extraído do Zoho
-(`RelatorioListaPrecos.xlsm`, relatório de lista de preços): **120 itens**
-(87 produtos físicos + 33 serviços técnicos), originalmente espalhados em
-23 categorias no Zoho e consolidados aqui em **11 categorias** (10 de
-produto + "Serviços Técnicos").
-
-- `categorias.json` / `produtos.json` — dados já tratados, prontos para
-  importar no MongoDB.
-- `gerar_catalogo_json.py` — script que gerou esses JSONs a partir da
-  planilha original (útil se precisar reprocessar com um relatório mais
-  recente do Zoho).
-- `mapeamento_categorias.py` — regra de consolidação: qual categoria do
-  Zoho virou qual categoria nova. Editável se quiser reorganizar antes de
-  reimportar.
-
-**Pontos que precisam de revisão manual antes (ou depois) de importar:**
-- `stock` de cada produto veio com valor **placeholder (10 unidades)** —
-  o relatório de origem não trazia estoque real, apenas preço. Ajuste
-  pelo painel admin depois de importar.
-- `barcode` só foi preenchido quando havia um código de barras real (EAN);
-  os 76 itens que só tinham o código genérico gerado pelo próprio Zoho
-  ficaram com `barcode: null`.
-- Os SKUs foram gerados automaticamente (ex: `PER-0007`) — troque pelos
-  seus códigos internos se já tiver um padrão.
-
-### Importar o catálogo
-
-```bash
-npm install
-cp .env.example .env   # preencha MONGO_URI etc.
-npm run seed            # cria o admin e (se quiser pular) categorias de exemplo
-npm run import-catalog -- migracao/categorias.json migracao/produtos.json
-```
-
-O import é feito por **upsert** (por slug de categoria e SKU de produto):
-rodar de novo não duplica nada, só atualiza.
+- Deploy (Render) + apontamento de DNS no Cloudflare
+- Otimização de imagens para produção (S3/R2)
 
 ## Como rodar localmente
 
 ### 1. Pré-requisitos
 - Node.js 18+
 - MongoDB rodando localmente, ou uma string de conexão do MongoDB Atlas
-  (camada gratuita serve para começar).
 
 ### 2. Instalar dependências
 ```bash
@@ -82,45 +31,59 @@ npm install
 cp .env.example .env
 ```
 Edite o `.env` e preencha `MONGO_URI`, `SESSION_SECRET`,
-`SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD`.
+`SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`,
+`SMTP_*` e outras variáveis conforme necessário.
 
-### 4. Criar o primeiro admin e categorias de exemplo
+### 4. Criar o primeiro admin
 ```bash
 npm run seed
 ```
 
-### 5. Rodar o servidor
+### 5. Importar o catálogo (opcional)
+```bash
+npm run import-catalog -- migracao/categorias.json migracao/produtos.json
+```
+
+### 6. Rodar o servidor
 ```bash
 npm run dev
 ```
 Acesse:
+- Loja: http://localhost:3000
 - Painel admin: http://localhost:3000/admin
 - API de produtos: http://localhost:3000/api/products
 
 ## Estrutura de pastas
 
 ```
-config/       conexão com o banco e script de seed
-middleware/   autenticação do admin
-models/       schemas do MongoDB (Mongoose)
+config/       conexão com o banco, seed e importação do catálogo
+middleware/   autenticação do admin e do cliente
+models/       schemas do MongoDB (Mongoose): Product, Category, Admin, Customer, Order
 routes/
-  admin/      rotas do painel (login, produtos, categorias, dashboard)
-  api/        rotas públicas somente leitura, para o front-end consumir
+  admin/      rotas do painel (login, produtos, categorias, pedidos, dashboard)
+  api/        rotas públicas: produtos, categorias, carrinho, frete, webhooks
+  shop.js     rotas públicas da loja (vitrine, produto, carrinho, checkout)
 views/
   admin/      telas EJS do painel administrativo
+  shop/       telas EJS da loja pública
+  customer/   telas de login/registro do cliente
+  emails/     templates de e-mail transacionais
 public/       CSS, JS estático e uploads de imagem
+lib/          serviços: Mercado Pago, e-mail (nodemailer), frete
 server.js     ponto de entrada da aplicação
 ```
 
-## Notas de arquitetura
+## Stack técnica
 
-- O painel admin usa **EJS server-rendered** por simplicidade — sem build
-  step, fácil de manter sozinho. Se no futuro quiser um admin mais rico
-  (SPA), dá para trocar só as views mantendo a API de baixo intacta.
-- Uploads de imagem vão para `public/uploads` em disco. Isso funciona bem
-  em VPS com disco persistente; se for hospedar em ambiente serverless
-  (ex: Vercel, Cloudflare Workers), será necessário trocar para um bucket
-  externo (S3, Cloudflare R2 etc.) antes do deploy.
-- `Product.hasVariants` + `Product.variants[]` permite modelar produtos com
-  variações (ex: SSD 240GB/480GB) sem duplicar produto — o preço/estoque
-  "base" do produto é usado apenas quando ele NÃO tem variações.
+| Camada | Tecnologia |
+|--------|-----------|
+| Runtime | Node.js >= 18 |
+| Framework | Express.js |
+| Banco | MongoDB (Atlas ou local) via Mongoose |
+| Template Engine | EJS (server-side rendering) |
+| Autenticação | express-session + bcryptjs |
+| Pagamento | Mercado Pago SDK (Pix + Cartão) |
+| E-mail | nodemailer + Zoho Mail SMTP |
+| Frete | ViaCEP + API dos Correios |
+| Deploy | Render |
+| DNS | Cloudflare |

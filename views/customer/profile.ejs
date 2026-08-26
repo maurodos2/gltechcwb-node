@@ -1,0 +1,127 @@
+<%- include('../partials/site-head', { title: 'Minha conta', navActive: 'account' }) %>
+
+<div class="container account-page">
+  <div class="page-header">
+    <h1>Minha conta</h1>
+    <form action="/conta/logout" method="POST" style="display:inline;">
+      <button type="submit" class="btn btn--ghost">Sair da conta</button>
+    </form>
+  </div>
+
+  <div class="account-grid">
+    <div class="account-card">
+      <h2>Dados pessoais</h2>
+      <p><strong>Nome:</strong> <%= customer.name %></p>
+      <p><strong>E-mail:</strong> <%= customer.email %></p>
+      <p><strong>Telefone:</strong> <%= customer.phone || 'Não informado' %></p>
+    </div>
+
+    <div class="account-card">
+      <h2>Endereços de entrega</h2>
+      <% if (customer.addresses && customer.addresses.length) { %>
+        <div class="address-list">
+          <% customer.addresses.forEach(function(addr) { %>
+            <div class="address-item <%= addr.isDefault ? 'address-item--default' : '' %>">
+              <strong><%= addr.label || 'Endereço' %></strong>
+              <% if (addr.isDefault) { %><span class="badge badge--promo">Principal</span><% } %>
+              <p><%= addr.street %>, <%= addr.number %><%= addr.complement ? ' — ' + addr.complement : '' %></p>
+              <p><%= addr.district ? addr.district + ' — ' : '' %><%= addr.city %> — <%= addr.state %></p>
+              <p>CEP: <%= addr.zipCode %></p>
+              <form method="POST" action="/conta/endereco/<%= addr._id %>/excluir" style="margin-top:8px;"
+                    onsubmit="return confirm('Excluir este endereço?');">
+                <button type="submit" class="btn btn--ghost btn--sm">Excluir</button>
+              </form>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="text-muted">Nenhum cadastrado ainda.</p>
+      <% } %>
+
+      <details class="address-form-toggle">
+        <summary>+ Adicionar endereço</summary>
+        <form method="POST" action="/conta/endereco" class="auth-form" style="margin-top:12px;">
+          <label>
+            Nome do endereço
+            <input type="text" name="label" value="Principal" />
+          </label>
+          <div class="form-row">
+            <label>
+              CEP *
+              <input type="text" name="zipCode" required maxlength="9" placeholder="00000-000"
+                     class="input-cep" />
+            </label>
+          </div>
+          <label>
+            Rua *
+            <input type="text" name="street" required id="addr-street" />
+          </label>
+          <div class="form-row">
+            <label>
+              Número *
+              <input type="text" name="number" required />
+            </label>
+            <label>
+              Complemento
+              <input type="text" name="complement" />
+            </label>
+          </div>
+          <label>
+            Bairro
+            <input type="text" name="district" id="addr-district" />
+          </label>
+          <div class="form-row">
+            <label>
+              Cidade *
+              <input type="text" name="city" required id="addr-city" />
+            </label>
+            <label>
+              Estado *
+              <select name="state" required id="addr-state">
+                <option value="">UF</option>
+                <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                <option value="PR" selected>PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+              </select>
+            </label>
+          </div>
+          <label class="checkbox-label">
+            <input type="checkbox" name="setDefault" checked /> Definir como endereço principal
+          </label>
+          <button type="submit" class="btn btn--primary">Salvar endereço</button>
+        </form>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.input-cep').forEach(input => {
+  input.addEventListener('blur', async () => {
+    const cep = input.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        const street = document.getElementById('addr-street');
+        const district = document.getElementById('addr-district');
+        const city = document.getElementById('addr-city');
+        const state = document.getElementById('addr-state');
+        if (street) street.value = data.logradouro || '';
+        if (district) district.value = data.bairro || '';
+        if (city) city.value = data.localidade || '';
+        if (state && data.uf) state.value = data.uf;
+      }
+    } catch (e) {}
+  });
+});
+</script>
+
+<%- include('../partials/site-foot') %>

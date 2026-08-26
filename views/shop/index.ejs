@@ -2,11 +2,11 @@
 
 <section class="hero">
   <div class="container hero__inner">
-    <span class="hero__badge"><span class="dot"></span> Assistência técnica · Curitiba</span>
-    <h1>Hardware, periféricos e <span class="grad-text">assistência especializada</span>.</h1>
+    <span class="hero__badge"><span class="dot"></span> Loja de informática · Curitiba</span>
+    <h1>Hardware, periféricos e <span class="grad-text">acessórios de qualidade</span>.</h1>
     <p class="hero__sub">
-      Da peça de reposição ao setup completo: a GLTechCWB fornece, monta e mantém
-      o seu computador com atendimento direto e preço justo.
+      Da peça de reposição ao setup completo: a GLTechCWB oferece os melhores produtos
+      com atendimento direto e preço justo.
     </p>
     <div class="hero__actions">
       <a href="/produtos" class="btn btn--primary">
@@ -130,15 +130,15 @@
 <%
   const waNumber = typeof contactWhatsapp !== 'undefined' ? contactWhatsapp : '';
   const mail = typeof contactEmail !== 'undefined' ? contactEmail : '';
-  const ctaHref = waNumber ? whatsappUrl(waNumber, 'Olá! Preciso de ajuda com meu computador.') : (mail ? 'mailto:' + mail : '');
+  const ctaHref = waNumber ? whatsappUrl(waNumber, 'Olá! Vim pelo site e gostaria de saber mais sobre os produtos.') : (mail ? 'mailto:' + mail : '');
 %>
 <section class="section">
   <div class="container">
     <div class="cta-banner">
       <div>
-        <span class="eyebrow">Assistência técnica</span>
-        <h2>Seu computador precisa de um upgrade?</h2>
-        <p>Fale com a nossa equipe: diagnóstico honesto, orçamento sem compromisso e serviço com garantia.</p>
+        <span class="eyebrow">Atendimento</span>
+        <h2>Precisa de ajuda para escolher?</h2>
+        <p>Fale com a nossa equipe: tiramos suas dúvidas e ajudamos você a encontrar o melhor produto.</p>
       </div>
       <% if (ctaHref) { %>
         <a href="<%= ctaHref %>" <%= waNumber ? 'target="_blank" rel="noopener"' : '' %> class="btn btn--primary">Falar com a gente</a>

@@ -21,7 +21,7 @@ async function importCatalog(categoriesPath, productsPath) {
   const categories = JSON.parse(fs.readFileSync(categoriesPath, 'utf-8'));
   const products = JSON.parse(fs.readFileSync(productsPath, 'utf-8'));
 
-  console.log(`[import] ${categories.length} categorias, ${products.length} produtos/serviços a importar.`);
+  console.log(`[import] ${categories.length} categorias, ${products.length} produtos a importar.`);
 
   // ---- Categorias (upsert por slug) ----
   const slugToId = {};
@@ -41,7 +41,7 @@ async function importCatalog(categoriesPath, productsPath) {
     console.log(`  [categoria] OK: ${cat.name}`);
   }
 
-  // ---- Produtos/serviços (upsert por SKU) ----
+  // ---- Produtos (upsert por SKU) ----
   let criados = 0;
   let atualizados = 0;
   let ignorados = 0;
@@ -60,7 +60,7 @@ async function importCatalog(categoriesPath, productsPath) {
       name: p.name,
       slug: p.slug,
       sku: p.sku,
-      type: p.type === 'servico' ? 'servico' : 'produto',
+      type: 'produto',
       category: categoryId,
       brand: p.brand || '',
       price: p.price || 0,

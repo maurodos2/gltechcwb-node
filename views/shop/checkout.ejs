@@ -1,0 +1,138 @@
+<%- include('../partials/site-head', { title: 'Finalizar compra', navActive: 'checkout' }) %>
+
+<div class="container checkout-page">
+  <h1>Finalizar compra</h1>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert--error"><%= error %></div>
+  <% } %>
+
+  <div class="checkout-grid">
+    <!-- Etapa 1: Endereço -->
+    <div class="checkout-section">
+      <h2>1. Endereço de entrega</h2>
+
+      <% if (customer.addresses && customer.addresses.length) { %>
+        <form method="POST" action="/checkout/frete" class="checkout-form">
+          <div class="address-select">
+            <% customer.addresses.forEach(function(addr) { %>
+              <label class="address-option <%= addr.isDefault ? 'address-option--selected' : '' %>">
+                <input type="radio" name="addressId" value="<%= addr._id %>"
+                  <%= addr.isDefault ? 'checked' : '' %> />
+                <div>
+                  <strong><%= addr.label || 'Endereço' %></strong>
+                  <p><%= addr.street %>, <%= addr.number %><%= addr.complement ? ' — ' + addr.complement : '' %></p>
+                  <p><%= addr.district ? addr.district + ' — ' : '' %><%= addr.city %> — <%= addr.state %></p>
+                  <p>CEP: <%= addr.zipCode %></p>
+                </div>
+              </label>
+            <% }) %>
+          </div>
+          <a href="/conta" class="btn btn--ghost btn--sm">Gerenciar endereços</a>
+        </form>
+      <% } %>
+
+      <div class="checkout-cep-form" style="margin-top:16px;">
+        <p class="text-muted">Ou informe o CEP para calcular o frete:</p>
+        <form method="POST" action="/checkout/frete" class="form-row" style="align-items:flex-end; gap:8px;">
+          <input type="text" name="zipCode" placeholder="00000-000" maxlength="9" required
+                 value="<%= shipping ? shipping.zipCode : '' %>" style="flex:1; padding:10px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text);" />
+          <button type="submit" class="btn btn--primary">Calcular</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Etapa 2: Frete -->
+    <% if (shipping) { %>
+    <div class="checkout-section">
+      <h2>2. Frete</h2>
+      <div class="shipping-info">
+        <p><strong><%= shipping.city %> — <%= shipping.state %></strong></p>
+        <p>
+          <% if (shipping.freeShipping) { %>
+            <span class="text-accent">Frete grátis!</span>
+          <% } else { %>
+            Frete: <strong><%= formatPrice(shipping.cost) %></strong>
+          <% } %>
+          — Entrega em até <strong><%= shipping.deliveryDays %> dias úteis</strong>
+        </p>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Etapa 3: Pagamento -->
+    <div class="checkout-section">
+      <h2>3. Pagamento</h2>
+      <form method="POST" action="/checkout/pay" class="checkout-form" id="payment-form">
+        <% if (shipping) { %>
+          <input type="hidden" name="addressId" value="" />
+        <% } %>
+
+        <div class="payment-methods">
+          <label class="payment-method">
+            <input type="radio" name="paymentMethod" value="pix" checked />
+            <div class="payment-method__info">
+              <strong>Pix</strong>
+              <span>Aprovação instantânea</span>
+            </div>
+          </label>
+          <label class="payment-method">
+            <input type="radio" name="paymentMethod" value="credit_card" />
+            <div class="payment-method__info">
+              <strong>Cartão de crédito</strong>
+              <span>Até 12x</span>
+            </div>
+          </label>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumo do pedido -->
+  <div class="checkout-summary">
+    <h2>Resumo do pedido</h2>
+    <div class="checkout-items">
+      <% cart.items.forEach(function(item) { %>
+        <div class="checkout-item">
+          <span><%= item.name %> x<%= item.quantity %></span>
+          <span><%= formatPrice(item.unitPrice * item.quantity) %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="checkout-totals">
+      <div class="checkout-total-row">
+        <span>Subtotal</span>
+        <span><%= formatPrice(cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0)) %></span>
+      </div>
+      <div class="checkout-total-row">
+        <span>Frete</span>
+        <span>
+          <% if (shipping) { %>
+            <%= shipping.freeShipping ? 'Grátis' : formatPrice(shipping.cost) %>
+          <% } else { %>
+            Informe o CEP
+          <% } %>
+        </span>
+      </div>
+      <div class="checkout-total-row checkout-total-row--total">
+        <span>Total</span>
+        <span>
+          <%= formatPrice(
+            cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0) +
+            (shipping ? shipping.cost : 0)
+          ) %>
+        </span>
+      </div>
+    </div>
+
+    <% if (shipping) { %>
+      <button type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
+        Pagar com Mercado Pago
+      </button>
+    <% } else { %>
+      <p class="text-muted" style="text-align:center; margin-top:16px;">Informe o CEP para continuar</p>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>
