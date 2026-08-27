@@ -78,6 +78,7 @@ app.use('/api/categories', require('./routes/api/categories'));
 app.use('/api/cart', require('./routes/api/cart'));
 app.use('/api/shipping', require('./routes/api/shipping'));
 app.use('/api/webhooks', require('./routes/api/webhooks'));
+app.use('/api/barcode', require('./routes/api/barcode'));
 
 // ---- Site público (vitrine) ----
 app.use('/', require('./routes/shop'));

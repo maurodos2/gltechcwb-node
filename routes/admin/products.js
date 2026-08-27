@@ -43,7 +43,7 @@ router.get('/new', async (req, res) => {
 // POST /admin/products - criar produto
 router.post('/', upload.array('images', 6), async (req, res) => {
   try {
-    const { name, sku, price, promoPrice, stock, category, description, shortDescription, brand, active, type } =
+    const { name, sku, barcode, price, promoPrice, stock, category, description, shortDescription, brand, active, type } =
       req.body;
 
     const images = (req.files || []).map((f) => `/uploads/${f.filename}`);
@@ -52,6 +52,7 @@ router.post('/', upload.array('images', 6), async (req, res) => {
       name,
       slug: slugify(name),
       sku,
+      barcode: barcode || null,
       type: 'produto',
       price: Number(price),
       promoPrice: promoPrice ? Number(promoPrice) : null,
@@ -90,13 +91,14 @@ router.get('/:id/edit', async (req, res) => {
 // PUT /admin/products/:id - atualizar produto
 router.put('/:id', upload.array('images', 6), async (req, res) => {
   try {
-    const { name, sku, price, promoPrice, stock, category, description, shortDescription, brand, active, type } =
+    const { name, sku, barcode, price, promoPrice, stock, category, description, shortDescription, brand, active, type } =
       req.body;
 
     const update = {
       name,
       slug: slugify(name),
       sku,
+      barcode: barcode || null,
       type: 'produto',
       price: Number(price),
       promoPrice: promoPrice ? Number(promoPrice) : null,

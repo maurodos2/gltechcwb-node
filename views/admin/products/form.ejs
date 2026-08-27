@@ -6,6 +6,18 @@
   <div class="alert alert--error"><%= error %></div>
 <% } %>
 
+<% if (!product) { %>
+<div class="barcode-lookup">
+  <h3>Buscar por código de barras</h3>
+  <p class="text-muted">Digite ou escaneie o EAN/UPC para auto-preencher os dados do produto.</p>
+  <div class="barcode-lookup__row">
+    <input type="text" id="barcode-input" placeholder="Ex: 7891234567890" maxlength="14" />
+    <button type="button" class="btn btn--primary" id="barcode-btn">Buscar</button>
+  </div>
+  <div id="barcode-status" class="barcode-lookup__status" style="display:none;"></div>
+</div>
+<% } %>
+
 <form
   class="admin-form"
   method="POST"
@@ -20,6 +32,11 @@
   <label>
     SKU
     <input type="text" name="sku" required value="<%= product ? product.sku : '' %>" />
+  </label>
+
+  <label>
+    Código de barras (EAN/UPC)
+    <input type="text" name="barcode" id="field-barcode" value="<%= product && product.barcode ? product.barcode : '' %>" />
   </label>
 
   <label>
@@ -97,5 +114,79 @@
     <a class="btn" href="/admin/products">Cancelar</a>
   </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const barcodeBtn = document.getElementById('barcode-btn');
+  const barcodeInput = document.getElementById('barcode-input');
+  const barcodeStatus = document.getElementById('barcode-status');
+
+  if (!barcodeBtn || !barcodeInput) return;
+
+  barcodeBtn.addEventListener('click', async () => {
+    const code = barcodeInput.value.replace(/\D/g, '');
+    if (code.length < 8) {
+      showStatus('Código de barras inválido.', 'error');
+      return;
+    }
+
+    barcodeBtn.disabled = true;
+    barcodeBtn.textContent = 'Buscando...';
+    showStatus('Consultando banco de dados...', 'loading');
+
+    try {
+      const res = await fetch('/api/barcode/' + code);
+      const result = await res.json();
+
+      if (result.success && result.data) {
+        const d = result.data;
+
+        if (d.name) setField('name', d.name);
+        if (d.brand) setField('brand', d.brand);
+        if (d.barcode) setField('barcode', d.barcode);
+        if (d.shortDescription) setField('shortDescription', d.shortDescription);
+        if (d.description) setTextarea('description', d.description);
+
+        if (d.images && d.images.length) {
+          showStatus('Produto encontrado! ' + d.images.length + ' imagem(ns) disponível(is). Preencha o preço, estoque e selecione a categoria.', 'success');
+        } else {
+          showStatus('Produto encontrado! Preencha o preço, estoque e selecione a categoria.', 'success');
+        }
+      } else {
+        showStatus(result.message || 'Produto não encontrado. Preencha manualmente.', 'warning');
+      }
+    } catch (err) {
+      showStatus('Erro ao buscar. Tente novamente.', 'error');
+    } finally {
+      barcodeBtn.disabled = false;
+      barcodeBtn.textContent = 'Buscar';
+    }
+  });
+
+  barcodeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      barcodeBtn.click();
+    }
+  });
+
+  function setField(name, value) {
+    const el = document.querySelector('[name="' + name + '"]');
+    if (el) el.value = value;
+  }
+
+  function setTextarea(name, value) {
+    const el = document.querySelector('[name="' + name + '"]');
+    if (el) el.value = value;
+  }
+
+  function showStatus(msg, type) {
+    if (!barcodeStatus) return;
+    barcodeStatus.style.display = 'block';
+    barcodeStatus.textContent = msg;
+    barcodeStatus.className = 'barcode-lookup__status barcode-status--' + type;
+  }
+});
+</script>
 
 <%- include('../../partials/admin-foot') %>
