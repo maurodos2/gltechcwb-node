@@ -1,11 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../../models/Order');
+const { WebhookSignatureValidator, InvalidWebhookSignatureError } = require('mercadopago');
 
 // POST /api/webhooks/mercadopago — notificação do Mercado Pago
 router.post('/mercadopago', async (req, res) => {
   try {
     const { type, data } = req.body;
+
+    // Valida a origem da notificação via assinatura HMAC (header x-signature).
+    // O secret deve ser o gerado pelo painel (Suas integrações > Webhooks).
+    const secret = process.env.WEBHOOK_SECRET;
+    if (secret) {
+      try {
+        WebhookSignatureValidator.validate({
+          xSignature: req.headers['x-signature'],
+          xRequestId: req.headers['x-request-id'],
+          dataId: req.query['data.id'],
+          secret,
+          toleranceSeconds: 300,
+        });
+      } catch (sigErr) {
+        if (sigErr instanceof InvalidWebhookSignatureError) {
+          console.error('[webhook] Assinatura inválida:', sigErr.reason);
+          return res.status(401).send('Assinatura inválida.');
+        }
+        throw sigErr;
+      }
+    } else {
+      console.warn('[webhook] WEBHOOK_SECRET não configurado; notificação aceita sem validação de assinatura.');
+    }
 
     if (type === 'payment') {
       const paymentId = data?.id;
