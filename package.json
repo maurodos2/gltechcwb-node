@@ -11,6 +11,7 @@
     "remove-services": "node config/remove-services.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1121.0",
     "axios": "^1.20.0",
     "bcryptjs": "^2.4.3",
     "connect-mongo": "^6.0.0",

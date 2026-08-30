@@ -23,14 +23,15 @@ Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env
 - Formulários HTML usam `method-override` via `?_method=PUT|DELETE` (configurado em `server.js`).
 - Helpers globais de view ficam em `app.locals` (em `server.js`): `formatPrice`, `effectivePrice`, `minVariantPrice`, `whatsappUrl`. Não redifinir nas views.
 - O middleware que carrega `navCategories` pula paths `/admin` e `/api`.
-- Imagens de upload vão para `public/uploads/` (gitignored; apenas `.gitkeep` commitado).
+- Webhooks do Mercado Pago validam assinatura HMAC (`x-signature`) via SDK oficial; `WEBHOOK_SECRET` deve ser o **secret gerado no painel MP** (Suas integrações > Webhooks), não um valor inventado.
 
 ## Arquitetura
 
 - `server.js` é o ponto único de montagem: qualquer rota nova precisa ser `app.use(...)` lá.
 - `routes/api/*` são a API pública JSON; `routes/admin/*` são protegidos por `requireAdminAuth` (exceto `auth.js`, montado antes do guard); `requirements` de cliente usam `requireCustomerAuth`.
-- `lib/` só tem `mail.js` (SMTP Zoho/nodemailer). Mercado Pago e frete estão embutidos em `routes/checkout.js` e `routes/api/shipping.js`.
+- `lib/` tem `mail.js` (SMTP Zoho/nodemailer) e `storage.js` (upload de imagens no Cloudflare R2 via S3 SDK; `R2_*` no `.env`, upload em memória no admin). Mercado Pago e frete estão embutidos em `routes/checkout.js` e `routes/api/shipping.js`.
 - Frete usa ViaCEP + tabela simulada (não é a API dos Correios ainda).
+- Imagens de produto: `Product.images` guarda URLs completas do R2 (`R2_PUBLIC_BASE_URL/produtos/...`); `public/uploads` não é mais usado para novos uploads.
 - `migracao/` contém scripts Python que **geram** `categorias.json`/`produtos.json`; não editar os JSONs como fonte.
 - `connect-mongo@6` exige a linha de interop no topo de `server.js` (`require('connect-mongo').default || require('connect-mongo')`) — não mexer.
 - Model `Product`: `type` só aceita `'produto'` (serviços foram removidos); suporta `variants`, `promoPrice`, `hasVariants`, `barcode`, `specs`, texto-search indexado.

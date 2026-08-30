@@ -1,19 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
 const Product = require('../../models/Product');
 const Category = require('../../models/Category');
+const { uploadImage, deleteImage } = require('../../lib/storage');
 
-// Upload simples de imagens para /public/uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '../../public/uploads')),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
-  },
-});
-const upload = multer({ storage });
+// Imagens chegam em memória e são enviadas direto ao Cloudflare R2.
+const upload = multer({ storage: multer.memoryStorage() });
 
 function slugify(text) {
   return text
@@ -46,7 +39,10 @@ router.post('/', upload.array('images', 6), async (req, res) => {
     const { name, sku, barcode, price, promoPrice, stock, category, description, shortDescription, brand, active, type } =
       req.body;
 
-    const images = (req.files || []).map((f) => `/uploads/${f.filename}`);
+    const images = [];
+    for (const f of req.files || []) {
+      images.push(await uploadImage(f.buffer, f.originalname, f.mimetype));
+    }
 
     await Product.create({
       name,
@@ -111,7 +107,11 @@ router.put('/:id', upload.array('images', 6), async (req, res) => {
     };
 
     if (req.files && req.files.length > 0) {
-      update.images = req.files.map((f) => `/uploads/${f.filename}`);
+      const images = [];
+      for (const f of req.files) {
+        images.push(await uploadImage(f.buffer, f.originalname, f.mimetype));
+      }
+      update.images = images;
     }
 
     await Product.findByIdAndUpdate(req.params.id, update);
@@ -124,7 +124,21 @@ router.put('/:id', upload.array('images', 6), async (req, res) => {
 
 // DELETE /admin/products/:id
 router.delete('/:id', async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id);
+  try {
+    const product = await Product.findById(req.params.id);
+    if (product && product.images && product.images.length) {
+      for (const img of product.images) {
+        try {
+          await deleteImage(img);
+        } catch (err) {
+          console.error('[admin] Erro ao apagar imagem do R2:', err.message);
+        }
+      }
+    }
+    await Product.findByIdAndDelete(req.params.id);
+  } catch (err) {
+    console.error(err);
+  }
   res.redirect('/admin/products');
 });
 
