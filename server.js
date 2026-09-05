@@ -67,26 +67,38 @@ app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index
 
 // Verificação de origem (CSRF ativo): rejeita POST/PUT/DELETE de fora do próprio domínio.
 // Webhooks do Mercado Pago (HTTP POST sem Origin de verificação) ficam de fora.
-// Ignora www/subdomínios: o Render pode normalizar o Host sem o www que o navegador envia no Origin.
+// Compara o Origin com o domínio conhecido do app (SITE_URL) E com o Host — assim,
+// mesmo que um proxy/ISP reescreva o Host no caminho, um Origin legítimo passa.
+// Desativada fora de produção (dev/túnel local); SameSite=Lax já bloqueia CSRF real.
+const appApex = (() => {
+  try {
+    return new URL(process.env.SITE_URL).hostname.toLowerCase().replace(/^www\./, '');
+  } catch (e) {
+    return null;
+  }
+})();
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/webhooks')) return next();
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    const origin = req.headers.origin || req.headers.referer;
-    if (origin) {
-      try {
-        const apex = (h) => h.toLowerCase().replace(/^www\./, '');
-        const oh = apex(new URL(origin).hostname);
-        const host = apex(req.get('host').split(':')[0]);
-        const sameHost = oh === host || host.endsWith('.' + oh) || oh.endsWith('.' + host);
-        if (sameHost) return next();
-      } catch (e) {
-        /* origem malformada é ignorada */
-      }
-      console.warn(`[seguranca] Origem recusada: ${req.method} ${req.originalUrl} | Origin=${req.headers.origin} | Referer=${req.headers.referer} | Host=${req.get('host')} | UA=${(req.get('user-agent') || '').slice(0, 80)}`);
-      return res.status(403).send('Requisição rejeitada.');
-    }
+  if (process.env.NODE_ENV !== 'production') return next();
+  if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) return next();
+
+  const origin = req.headers.origin || req.headers.referer;
+  if (!origin) return next();
+
+  let apex;
+  try {
+    apex = (h) => h.toLowerCase().replace(/^www\./, '');
+    const oh = apex(new URL(origin).hostname);
+    const host = apex(req.get('host').split(':')[0]);
+    const allowed = [appApex, host].filter(Boolean);
+    const ok = allowed.some((h) => oh === h || oh.endsWith('.' + h));
+    if (ok) return next();
+  } catch (e) {
+    return next();
   }
-  next();
+
+  console.warn(`[seguranca] Origem recusada: ${req.method} ${req.originalUrl} | Origin=${req.headers.origin} | Referer=${req.headers.referer} | Host=${req.get('host')} | UA=${(req.get('user-agent') || '').slice(0, 80)}`);
+  return res.status(403).send('Requisição rejeitada.');
 });
 
 // Rate limit global para a API pública
