@@ -19,7 +19,6 @@ router.get('/', requireCustomerAuth, async (req, res) => {
     cart,
     customer,
     shipping: req.session.shipping || null,
-    mpPublicKey: process.env.MP_PUBLIC_KEY || '',
   });
 });
 

@@ -2,9 +2,6 @@
 
 <div class="container checkout-page">
   <h1>Finalizar compra</h1>
-  <% const subtotal = cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0); %>
-  <% const shippingCost = shipping ? shipping.cost : 0; %>
-  <% const totalAmount = Math.round((subtotal + shippingCost) * 100) / 100; %>
 
   <% if (typeof error !== 'undefined' && error) { %>
     <div class="alert alert--error"><%= error %></div>
@@ -88,7 +85,6 @@
           </label>
         </div>
       </form>
-      <div id="card-payment-brick" style="display:none; margin-top:18px;"></div>
     </div>
   </div>
 
@@ -130,7 +126,7 @@
     </div>
 
     <% if (shipping) { %>
-      <button id="pay-merchant" type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
+      <button type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
         Pagar com Mercado Pago
       </button>
     <% } else { %>
@@ -138,94 +134,5 @@
     <% } %>
   </div>
 </div>
-<script src="https://sdk.mercadopago.com/js/v2?locale=pt-BR"></script>
-<script>
-  (function () {
-    const pixRadio = document.querySelector('input[name="paymentMethod"][value="pix"]');
-    const cardRadio = document.querySelector('input[name="paymentMethod"][value="credit_card"]');
-    const brickContainer = document.getElementById('card-payment-brick');
-    const merchantBtn = document.getElementById('pay-merchant');
-
-    if (!cardRadio || !brickContainer || !merchantBtn) return;
-
-    function syncPaymentUI() {
-      const isCard = cardRadio.checked;
-      const brickFailed = window.__gltechCardBrick === 'failed';
-      const showBrick = isCard && !brickFailed;
-      merchantBtn.style.display = showBrick ? 'none' : '';
-      brickContainer.style.display = showBrick ? 'block' : 'none';
-      if (isCard && !window.__gltechCardBrick && !window.__gltechBrickLoading) {
-        initCardBrick();
-      }
-    }
-
-    async function initCardBrick() {
-      <% if (mpPublicKey) { %>
-      window.__gltechBrickLoading = true;
-      brickContainer.innerHTML = '<p class="text-muted" style="padding:12px 0;">Carregando formulário de pagamento...</p>';
-      try {
-        const mp = new MercadoPago('<%= mpPublicKey %>', { locale: 'pt-BR' });
-        const bricksBuilder = mp.bricks();
-
-        await bricksBuilder.create('cardPayment', 'card-payment-brick', {
-          initialization: { amount: <%= totalAmount %> },
-          callbacks: {
-            onReady: () => {
-              window.__gltechCardBrick = true;
-              window.__gltechBrickLoading = false;
-            },
-            onSubmit: async (cardFormData) => {
-              try {
-                const response = await fetch('/checkout/pay-card', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    token: cardFormData.token,
-                    installments: Number(cardFormData.installments) || 1,
-                  }),
-                });
-                const data = await response.json();
-                if (data.success) {
-                  window.location.href = data.redirect;
-                } else {
-                  alert(data.message || 'Não foi possível concluir o pagamento.');
-                }
-              } catch (err) {
-                alert('Erro de conexão. Tente novamente.');
-              }
-            },
-            onError: (error) => {
-              console.error('[checkout] Erro no Bricks de cartão:', error);
-              window.__gltechCardBrick = 'failed';
-              window.__gltechBrickLoading = false;
-              brickContainer.style.display = 'none';
-              merchantBtn.style.display = '';
-              alert('Não foi possível carregar o formulário de cartão. Use o botão para pagar pelo Mercado Pago.');
-            },
-          },
-        });
-        window.__gltechCardBrick = true;
-        window.__gltechBrickLoading = false;
-      } catch (err) {
-        console.error('[checkout] Falha ao carregar o Bricks de cartão:', err);
-        // Se o Bricks não renderizar (ex.: origem não liberada), volta para o
-        // checkout hospedado do Mercado Pago, que funciona em qualquer ambiente.
-        window.__gltechCardBrick = 'failed';
-        window.__gltechBrickLoading = false;
-        brickContainer.style.display = 'none';
-        merchantBtn.style.display = '';
-      }
-      <% } else { %>
-      window.__gltechCardBrick = 'failed';
-      brickContainer.style.display = 'none';
-      merchantBtn.style.display = '';
-      <% } %>
-    }
-
-    pixRadio.addEventListener('change', syncPaymentUI);
-    cardRadio.addEventListener('change', syncPaymentUI);
-    syncPaymentUI();
-  })();
-</script>
 
 <%- include('../partials/site-foot') %>
