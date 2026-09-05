@@ -16,6 +16,10 @@ services:
         generateValue: true
       - key: SITE_URL
         value: https://www.gltechcwb.com
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: CONTACT_WHATSAPP
+        sync: false
       - key: MP_ACCESS_TOKEN
         sync: false
       - key: MP_PUBLIC_KEY
