@@ -1790,6 +1790,14 @@ img {
   font-size: 1.05rem;
 }
 
+.pickup-panel {
+  margin-top: 12px;
+}
+
+.pickup-panel p {
+  margin: 2px 0;
+}
+
 /* ---- Order status pages ---- */
 .page-header {
   display: flex;

@@ -8,6 +8,39 @@
   <% } %>
 
   <div class="checkout-grid">
+    <!-- Forma de recebimento -->
+    <% if (pickupEnabled) { %>
+    <div class="checkout-section">
+      <h2>Como você quer receber?</h2>
+      <div class="payment-methods">
+        <label class="payment-method">
+          <input type="radio" name="fulfillment" value="delivery" checked />
+          <div class="payment-method__info">
+            <strong>Receber em casa</strong>
+            <span>Entrega no endereço informado</span>
+          </div>
+        </label>
+        <label class="payment-method">
+          <input type="radio" name="fulfillment" value="pickup" />
+          <div class="payment-method__info">
+            <strong>Retirar na loja</strong>
+            <span>Sem custo de frete</span>
+          </div>
+        </label>
+      </div>
+      <div id="pickup-panel" class="pickup-panel" style="display:none;">
+        <div class="shipping-info">
+          <p><strong>Retirada na loja</strong></p>
+          <p>Endereço: <%= pickupAddress %></p>
+          <% if (pickupHours) { %>
+            <p>Horário de retirada: <%= pickupHours %></p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <div id="delivery-sections">
     <!-- Etapa 1: Endereço -->
     <div class="checkout-section">
       <h2>1. Endereço de entrega</h2>
@@ -59,14 +92,14 @@
       </div>
     </div>
     <% } %>
+    </div>
 
     <!-- Etapa 3: Pagamento -->
     <div class="checkout-section">
       <h2>3. Pagamento</h2>
       <form method="POST" action="/checkout/pay" class="checkout-form" id="payment-form">
-        <% if (shipping) { %>
-          <input type="hidden" name="addressId" value="" />
-        <% } %>
+        <input type="hidden" name="fulfillment" id="fulfillment-input" value="delivery" />
+        <input type="hidden" name="addressId" value="" />
 
         <div class="payment-methods">
           <label class="payment-method">
@@ -106,7 +139,7 @@
         <span>Subtotal</span>
         <span><%= formatPrice(cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0)) %></span>
       </div>
-      <div class="checkout-total-row">
+      <div class="checkout-total-row" id="frete-delivery-row">
         <span>Frete</span>
         <span>
           <% if (shipping) { %>
@@ -116,23 +149,31 @@
           <% } %>
         </span>
       </div>
+      <div class="checkout-total-row" id="frete-pickup-row" style="display:none;">
+        <span>Frete</span>
+        <span>Grátis (retirada)</span>
+      </div>
       <div class="checkout-total-row checkout-total-row--total">
         <span>Total</span>
-        <span>
+        <span id="total-delivery">
           <%= formatPrice(
             cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0) +
             (shipping ? shipping.cost : 0)
           ) %>
         </span>
+        <span id="total-pickup" style="display:none;">
+          <%= formatPrice(cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0)) %>
+        </span>
       </div>
     </div>
 
-    <% if (shipping) { %>
+    <% if (shipping || pickupEnabled) { %>
       <div id="payment-btn-wrap">
         <button id="btn-pagar" type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
           Pagar com Mercado Pago
         </button>
       </div>
+      <p id="frete-need-cep" class="text-muted" style="text-align:center; margin-top:16px;">Informe o CEP para continuar</p>
     <% } else { %>
       <p class="text-muted" style="text-align:center; margin-top:16px;">Informe o CEP para continuar</p>
     <% } %>
@@ -151,6 +192,37 @@
 
   var radios = form.querySelectorAll('input[name="paymentMethod"]');
   var pollTimer = null;
+
+  var fulfillmentInput = document.getElementById('fulfillment-input');
+  var fulfillmentRadios = document.querySelectorAll('input[name="fulfillment"]');
+  var deliverySections = document.getElementById('delivery-sections');
+  var pickupPanel = document.getElementById('pickup-panel');
+  var freteDeliveryRow = document.getElementById('frete-delivery-row');
+  var fretePickupRow = document.getElementById('frete-pickup-row');
+  var totalDelivery = document.getElementById('total-delivery');
+  var totalPickup = document.getElementById('total-pickup');
+  var needCep = document.getElementById('frete-need-cep');
+  var hasShipping = <%= shipping ? true : false %>;
+
+  function applyFulfillment() {
+    var sel = form.querySelector('input[name="fulfillment"]:checked');
+    var p = sel ? sel.value : 'delivery';
+    var isPickup = p === 'pickup';
+    if (fulfillmentInput) fulfillmentInput.value = p;
+
+    if (deliverySections) deliverySections.style.display = isPickup ? 'none' : '';
+    if (pickupPanel) pickupPanel.style.display = isPickup ? 'block' : 'none';
+    if (freteDeliveryRow) freteDeliveryRow.style.display = isPickup ? 'none' : '';
+    if (fretePickupRow) fretePickupRow.style.display = isPickup ? '' : 'none';
+    if (totalDelivery) totalDelivery.style.display = isPickup ? 'none' : '';
+    if (totalPickup) totalPickup.style.display = isPickup ? '' : 'none';
+
+    var blocked = !isPickup && !hasShipping;
+    btn.disabled = blocked;
+    if (needCep) needCep.style.display = blocked ? 'block' : 'none';
+  }
+  fulfillmentRadios.forEach(function (r) { r.addEventListener('change', applyFulfillment); });
+  applyFulfillment();
 
   function currentMethod() {
     var sel = form.querySelector('input[name="paymentMethod"]:checked');

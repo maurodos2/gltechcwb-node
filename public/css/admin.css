@@ -69,6 +69,7 @@ button, .btn {
 
 .alert { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9rem; }
 .alert--error { background: #fde8e8; color: var(--color-danger); }
+.alert--success { background: #e2fbe8; color: #1a7f37; }
 
 /* Page header */
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }

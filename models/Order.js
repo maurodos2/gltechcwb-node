@@ -44,6 +44,12 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, default: '' }, // ex: "pix", "cartao", "boleto"
     paymentProviderRef: { type: String, default: '' }, // id da transação no gateway
 
+    fulfillment: {
+      type: String,
+      enum: ['delivery', 'pickup'],
+      default: 'delivery',
+    },
+
     notes: { type: String, default: '' },
   },
   { timestamps: true }

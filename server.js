@@ -95,6 +95,7 @@ app.use('/admin', requireAdminAuth, require('./routes/admin/dashboard'));
 app.use('/admin/products', requireAdminAuth, require('./routes/admin/products'));
 app.use('/admin/categories', requireAdminAuth, require('./routes/admin/categories'));
 app.use('/admin/orders', requireAdminAuth, require('./routes/admin/orders'));
+app.use('/admin/checkout', requireAdminAuth, require('./routes/admin/checkout'));
 
 // ---- 404 ----
 app.use((req, res) => {

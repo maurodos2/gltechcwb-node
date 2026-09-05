@@ -20,7 +20,9 @@
       <tr>
         <td><strong>#<%= String(order._id).slice(-8).toUpperCase() %></strong></td>
         <td><%= order.customer.name %><br/><small><%= order.customer.email %></small></td>
-        <td><%= formatPrice(order.total) %></td>
+        <td><%= formatPrice(order.total) %>
+          <% if (order.fulfillment === 'pickup') { %><br/><small>Retirada na loja</small><% } %>
+        </td>
         <td>
           <span class="status-badge status-badge--<%= order.status %>">
             <% const statusLabels = { pending_payment: 'Aguardando', paid: 'Pago', processing: 'Preparando', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' }; %>

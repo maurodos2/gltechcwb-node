@@ -1,0 +1,79 @@
+<%- include('../partials/admin-head', { title: 'Frete e retirada' }) %>
+
+<h1>Frete e retirada</h1>
+
+<% if (saved) { %>
+  <div class="alert alert--success">Configuração salva com sucesso.</div>
+<% } %>
+
+<form class="admin-form" method="POST" action="/admin/checkout?_method=PUT">
+  <h2>Cobrança de frete</h2>
+
+  <label class="checkbox-label">
+    <input type="checkbox" name="shippingEnabled" <%= settings.shippingEnabled ? 'checked' : '' %> />
+    Cobrar frete nas entregas
+  </label>
+
+  <div class="form-row">
+    <label>
+      Frete grátis a partir de (R$)
+      <input type="number" step="0.01" min="0" name="freeShippingThreshold" value="<%= settings.freeShippingThreshold %>" />
+      <small>0 = nunca dar frete grátis</small>
+    </label>
+    <label>
+      Custo por kg (R$)
+      <input type="number" step="0.01" min="0" name="costPerKg" value="<%= settings.costPerKg %>" />
+    </label>
+  </div>
+
+  <h2>Valor base por região (R$)</h2>
+  <div class="admin-grid">
+    <% regions.forEach(function(r) { %>
+      <label>
+        <%= r.label %>
+        <input type="number" step="0.01" min="0" name="baseCost_<%= r.key %>" value="<%= settings.baseCosts[r.key] %>" />
+      </label>
+    <% }) %>
+  </div>
+
+  <h2>Prazo de entrega por região (dias úteis)</h2>
+  <div class="admin-grid">
+    <% regions.forEach(function(r) { %>
+      <label>
+        <%= r.label %>
+        <input type="number" min="1" name="days_<%= r.key %>" value="<%= settings.deliveryDays[r.key] %>" />
+      </label>
+    <% }) %>
+  </div>
+
+  <h2>Retirada na loja</h2>
+
+  <label class="checkbox-label">
+    <input type="checkbox" name="pickupEnabled" <%= settings.pickupEnabled ? 'checked' : '' %> />
+    Permitir retirada no checkout (frete R$ 0)
+  </label>
+
+  <label>
+    Endereço da loja (mostrado no checkout)
+    <input type="text" name="pickupAddress" value="<%= settings.pickupAddress %>" placeholder="Rua ..., Bairro ... — Curitiba/PR" />
+  </label>
+
+  <label>
+    Horário de retirada
+    <input type="text" name="pickupHours" value="<%= settings.pickupHours %>" placeholder="Seg a Sex, das 9h às 18h" />
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn--primary">Salvar</button>
+    <a class="btn" href="/admin">Cancelar</a>
+  </div>
+</form>
+
+<style>
+  .admin-form h2 { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 24px; }
+  .admin-form h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .admin-form small { font-size: .8rem; color: var(--text-muted); display: block; margin-top: 2px; }
+</style>
+
+<%- include('../partials/admin-foot') %>

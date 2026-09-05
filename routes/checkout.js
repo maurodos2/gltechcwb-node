@@ -13,12 +13,19 @@ router.get('/', requireCustomerAuth, async (req, res) => {
 
   const Customer = require('../models/Customer');
   const customer = await Customer.findById(req.session.customerId);
+  const { getCheckoutSettings } = require('../lib/checkout-settings');
+  const checkoutSettings = await getCheckoutSettings();
 
   res.render('shop/checkout', {
     title: 'Finalizar compra',
     cart,
     customer,
     shipping: req.session.shipping || null,
+    shippingEnabled: checkoutSettings.shippingEnabled,
+    pickupEnabled: checkoutSettings.pickupEnabled,
+    pickupAddress: checkoutSettings.pickupAddress,
+    pickupHours: checkoutSettings.pickupHours,
+    freeShippingThreshold: checkoutSettings.freeShippingThreshold,
   });
 });
 
@@ -49,12 +56,15 @@ router.post('/frete', requireCustomerAuth, async (req, res) => {
     const totalWeight = cart.items.reduce((sum, item) => sum + (item.weightKg || 0.5) * item.quantity, 0);
     const weight = Math.max(0.3, totalWeight);
 
-    const baseRegion = getRegion(cepData.uf);
-    const baseCost = { sul: 15, sudeste: 12, centroOeste: 18, norte: 25, nordeste: 22 };
-    let shippingCost = (baseCost[baseRegion] || 15) + (weight * 2);
-    const deliveryDays = { sul: 3, sudeste: 4, centroOeste: 5, norte: 7, nordeste: 6 }[baseRegion] || 5;
+    const { getCheckoutSettings } = require('../lib/checkout-settings');
+    const checkoutSettings = await getCheckoutSettings();
 
-    if (totalValue >= 300) shippingCost = 0;
+    const baseRegion = getRegion(cepData.uf);
+    const baseCost = checkoutSettings.baseCosts;
+    let shippingCost = checkoutSettings.shippingEnabled ? (baseCost[baseRegion] || 15) + (weight * checkoutSettings.costPerKg) : 0;
+    const deliveryDays = checkoutSettings.deliveryDays[baseRegion] || 5;
+
+    if (checkoutSettings.freeShippingThreshold > 0 && totalValue >= checkoutSettings.freeShippingThreshold) shippingCost = 0;
     shippingCost = Math.round(shippingCost * 100) / 100;
 
     req.session.shipping = {
@@ -83,7 +93,8 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
       return res.redirect('/carrinho');
     }
 
-    const { paymentMethod, addressId } = req.body;
+    const { paymentMethod, addressId, fulfillment } = req.body;
+    const isPickup = fulfillment === 'pickup';
     const Customer = require('../models/Customer');
     const customer = await Customer.findById(req.session.customerId);
 
@@ -91,7 +102,12 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
 
     // Determinar endereço de entrega
     let shippingAddress = {};
-    if (addressId) {
+    if (isPickup) {
+      const { getCheckoutSettings } = require('../lib/checkout-settings');
+      const checkoutSettings = await getCheckoutSettings();
+      if (!checkoutSettings.pickupEnabled) return res.redirect('/checkout');
+      shippingAddress = { street: checkoutSettings.pickupAddress, city: 'Curitiba', state: 'PR' };
+    } else if (addressId) {
       const addr = customer.addresses.id(addressId);
       if (addr) {
         shippingAddress = {
@@ -134,7 +150,7 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
     }
 
     const itemsTotal = cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const shippingCost = req.session.shipping ? req.session.shipping.cost : 0;
+    const shippingCost = isPickup ? 0 : (req.session.shipping ? req.session.shipping.cost : 0);
     const total = itemsTotal + shippingCost;
 
     // Criar pedido
@@ -144,6 +160,7 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
         email: customer.email,
         phone: customer.phone,
       },
+      fulfillment: isPickup ? 'pickup' : 'delivery',
       shippingAddress,
       items: cart.items.map((item) => ({
         product: item.productId,
@@ -261,6 +278,15 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
       return res.json({ success: false, message: 'Faça login para continuar.' });
     }
 
+    const isPickup = req.body.fulfillment === 'pickup';
+    if (isPickup) {
+      const { getCheckoutSettings } = require('../lib/checkout-settings');
+      const checkoutSettings = await getCheckoutSettings();
+      if (!checkoutSettings.pickupEnabled) {
+        return res.json({ success: false, message: 'Retirada indisponível no momento.' });
+      }
+    }
+
     for (const item of cart.items) {
       const product = await Product.findById(item.productId);
       if (!product) {
@@ -277,11 +303,15 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
     }
 
     const itemsTotal = cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const shippingCost = req.session.shipping ? req.session.shipping.cost : 0;
+    const shippingCost = isPickup ? 0 : (req.session.shipping ? req.session.shipping.cost : 0);
     const total = Math.round((itemsTotal + shippingCost) * 100) / 100;
 
     let shippingAddress = {};
-    if (req.session.shipping) {
+    if (isPickup) {
+      const { getCheckoutSettings } = require('../lib/checkout-settings');
+      const checkoutSettings = await getCheckoutSettings();
+      shippingAddress = { street: checkoutSettings.pickupAddress, city: 'Curitiba', state: 'PR' };
+    } else if (req.session.shipping) {
       shippingAddress = {
         street: req.session.shipping.street,
         district: req.session.shipping.district,
@@ -308,6 +338,7 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
       itemsTotal,
       shippingCost,
       total,
+      fulfillment: isPickup ? 'pickup' : 'delivery',
       status: 'pending_payment',
       paymentMethod: 'pix',
     });
@@ -489,7 +520,7 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
 
     if (order.status === 'paid') {
       try {
-        const { sendOrderConfirmation } = require('../../lib/mail');
+        const { sendOrderConfirmation } = require('../lib/mail');
         await sendOrderConfirmation(order);
       } catch (mailErr) {
         console.error('[checkout] Erro ao enviar e-mail pós-cartão:', mailErr.message);
@@ -533,7 +564,7 @@ router.get('/sucesso', async (req, res) => {
 
           if (order.status === 'paid') {
             try {
-              const { sendOrderConfirmation } = require('../../lib/mail');
+              const { sendOrderConfirmation } = require('../lib/mail');
               await sendOrderConfirmation(order);
             } catch (mailErr) {
               console.error('[checkout] Erro ao enviar e-mail pós-pagamento:', mailErr.message);

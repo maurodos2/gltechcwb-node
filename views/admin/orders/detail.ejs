@@ -15,7 +15,10 @@
 
   <div class="order-detail-section">
     <h2>Endereço de entrega</h2>
-    <% if (order.shippingAddress && order.shippingAddress.street) { %>
+    <% if (order.fulfillment === 'pickup') { %>
+      <p><strong>Retirada na loja</strong><%= order.shippingAddress && order.shippingAddress.street ? ' — ' + order.shippingAddress.street : '' %></p>
+      <p class="text-muted">Sem custo de frete</p>
+    <% } else if (order.shippingAddress && order.shippingAddress.street) { %>
       <p><%= order.shippingAddress.street %>, <%= order.shippingAddress.number %><%= order.shippingAddress.complement ? ' — ' + order.shippingAddress.complement : '' %></p>
       <p><%= order.shippingAddress.district ? order.shippingAddress.district + ' — ' : '' %><%= order.shippingAddress.city %> — <%= order.shippingAddress.state %></p>
       <p>CEP: <%= order.shippingAddress.zipCode %></p>
