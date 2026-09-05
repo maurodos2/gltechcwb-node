@@ -170,6 +170,10 @@
         await bricksBuilder.create('cardPayment', 'card-payment-brick', {
           initialization: { amount: <%= totalAmount %> },
           callbacks: {
+            onReady: () => {
+              window.__gltechCardBrick = true;
+              window.__gltechBrickLoading = false;
+            },
             onSubmit: async (cardFormData) => {
               try {
                 const response = await fetch('/checkout/pay-card', {
@@ -189,6 +193,14 @@
               } catch (err) {
                 alert('Erro de conexão. Tente novamente.');
               }
+            },
+            onError: (error) => {
+              console.error('[checkout] Erro no Bricks de cartão:', error);
+              window.__gltechCardBrick = 'failed';
+              window.__gltechBrickLoading = false;
+              brickContainer.style.display = 'none';
+              merchantBtn.style.display = '';
+              alert('Não foi possível carregar o formulário de cartão. Use o botão para pagar pelo Mercado Pago.');
             },
           },
         });
