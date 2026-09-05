@@ -150,47 +150,63 @@
 
     function syncPaymentUI() {
       const isCard = cardRadio.checked;
-      merchantBtn.style.display = isCard ? 'none' : '';
-      brickContainer.style.display = isCard ? 'block' : 'none';
-      if (isCard && !window.__gltechCardBrick) {
+      const brickFailed = window.__gltechCardBrick === 'failed';
+      const showBrick = isCard && !brickFailed;
+      merchantBtn.style.display = showBrick ? 'none' : '';
+      brickContainer.style.display = showBrick ? 'block' : 'none';
+      if (isCard && !window.__gltechCardBrick && !window.__gltechBrickLoading) {
         initCardBrick();
       }
     }
 
     async function initCardBrick() {
       <% if (mpPublicKey) { %>
-      const mp = new MercadoPago('<%= mpPublicKey %>', { locale: 'pt-BR' });
-      const bricksBuilder = mp.bricks();
+      window.__gltechBrickLoading = true;
+      brickContainer.innerHTML = '<p class="text-muted" style="padding:12px 0;">Carregando formulário de pagamento...</p>';
+      try {
+        const mp = new MercadoPago('<%= mpPublicKey %>', { locale: 'pt-BR' });
+        const bricksBuilder = mp.bricks();
 
-      await bricksBuilder.create('cardPayment', 'card-payment-brick', {
-        initialization: { amount: <%= totalAmount %> },
-        callbacks: {
-          onSubmit: async (cardFormData) => {
-            try {
-              const response = await fetch('/checkout/pay-card', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  token: cardFormData.token,
-                  installments: Number(cardFormData.installments) || 1,
-                }),
-              });
-              const data = await response.json();
-              if (data.success) {
-                window.location.href = data.redirect;
-              } else {
-                alert(data.message || 'Não foi possível concluir o pagamento.');
+        await bricksBuilder.create('cardPayment', 'card-payment-brick', {
+          initialization: { amount: <%= totalAmount %> },
+          callbacks: {
+            onSubmit: async (cardFormData) => {
+              try {
+                const response = await fetch('/checkout/pay-card', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    token: cardFormData.token,
+                    installments: Number(cardFormData.installments) || 1,
+                  }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                  window.location.href = data.redirect;
+                } else {
+                  alert(data.message || 'Não foi possível concluir o pagamento.');
+                }
+              } catch (err) {
+                alert('Erro de conexão. Tente novamente.');
               }
-            } catch (err) {
-              alert('Erro de conexão. Tente novamente.');
-            }
+            },
           },
-        },
-      });
-      window.__gltechCardBrick = true;
+        });
+        window.__gltechCardBrick = true;
+        window.__gltechBrickLoading = false;
+      } catch (err) {
+        console.error('[checkout] Falha ao carregar o Bricks de cartão:', err);
+        // Se o Bricks não renderizar (ex.: origem não liberada), volta para o
+        // checkout hospedado do Mercado Pago, que funciona em qualquer ambiente.
+        window.__gltechCardBrick = 'failed';
+        window.__gltechBrickLoading = false;
+        brickContainer.style.display = 'none';
+        merchantBtn.style.display = '';
+      }
       <% } else { %>
-      brickContainer.innerHTML = '<p class="text-muted">Pagamento por cartão indisponível no momento.</p>';
-      window.__gltechCardBrick = true;
+      window.__gltechCardBrick = 'failed';
+      brickContainer.style.display = 'none';
+      merchantBtn.style.display = '';
       <% } %>
     }
 
