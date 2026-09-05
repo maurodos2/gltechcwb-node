@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo').default || require('connect-mongo');
+const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -65,11 +66,12 @@ app.use(express.json({ limit: '100kb' }));
 app.use(methodOverride('_method')); // permite PUT/DELETE via ?_method= em forms HTML
 app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index: false }));
 
-// Verificação de origem (CSRF ativo): rejeita POST/PUT/DELETE de fora do próprio domínio.
-// Webhooks do Mercado Pago (HTTP POST sem Origin de verificação) ficam de fora.
-// Compara o Origin com o domínio conhecido do app (SITE_URL) E com o Host — assim,
-// mesmo que um proxy/ISP reescreva o Host no caminho, um Origin legítimo passa.
-// Desativada fora de produção (dev/túnel local); SameSite=Lax já bloqueia CSRF real.
+// Verificação de origem (CSRF em camadas): compara o Origin com o domínio do app
+// (SITE_URL) e com o Host. Webhooks do Mercado Pago ficam de fora.
+// IMPORTANTE: por padrão NÃO bloqueia (apena registra) enquanto investigamos um
+// bloqueio falso de login do dono da loja; a defesa real de CSRF é o cookie
+// SameSite=Lax + HttpOnly. Reativar em BLOCK quando o caso estiver esclarecido.
+const BLOCK_CROSS_ORIGIN = false;
 const appApex = (() => {
   try {
     return new URL(process.env.SITE_URL).hostname.toLowerCase().replace(/^www\./, '');
@@ -85,20 +87,40 @@ app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer;
   if (!origin) return next();
 
-  let apex;
+  let suspect = false;
   try {
-    apex = (h) => h.toLowerCase().replace(/^www\./, '');
+    const apex = (h) => h.toLowerCase().replace(/^www\./, '');
     const oh = apex(new URL(origin).hostname);
     const host = apex(req.get('host').split(':')[0]);
     const allowed = [appApex, host].filter(Boolean);
     const ok = allowed.some((h) => oh === h || oh.endsWith('.' + h));
-    if (ok) return next();
+    suspect = !ok;
   } catch (e) {
     return next();
   }
+  if (!suspect) return next();
 
-  console.warn(`[seguranca] Origem recusada: ${req.method} ${req.originalUrl} | Origin=${req.headers.origin} | Referer=${req.headers.referer} | Host=${req.get('host')} | UA=${(req.get('user-agent') || '').slice(0, 80)}`);
-  return res.status(403).send('Requisição rejeitada.');
+  const evento = {
+    ts: new Date(),
+    method: req.method,
+    url: req.originalUrl,
+    origin: req.headers.origin || '',
+    referer: req.headers.referer || '',
+    host: req.get('host') || '',
+    ip: req.ip || '',
+    ua: (req.get('user-agent') || '').slice(0, 120),
+  };
+  console.warn(`[seguranca] Origem suspeita: ${JSON.stringify(evento)}`);
+  if (mongoose) {
+    mongoose.connection.db
+      .collection('security_events')
+      .insertOne(evento)
+      .catch((e) => console.warn('[seguranca] falha ao registrar evento:', e.message));
+  }
+  if (BLOCK_CROSS_ORIGIN) {
+    return res.status(403).send('Requisição rejeitada.');
+  }
+  next();
 });
 
 // Rate limit global para a API pública
