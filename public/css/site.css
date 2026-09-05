@@ -1724,7 +1724,8 @@ img {
 }
 
 .payment-method:has(input:checked) {
-  border-color: var(--accent);
+  border-color: var(--green-400);
+  background: rgba(61, 220, 132, 0.06);
 }
 
 .payment-method__info {
