@@ -35,3 +35,8 @@ Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env
 - `migracao/` contém scripts Python que **geram** `categorias.json`/`produtos.json`; não editar os JSONs como fonte.
 - `connect-mongo@6` exige a linha de interop no topo de `server.js` (`require('connect-mongo').default || require('connect-mongo')`) — não mexer.
 - Model `Product`: `type` só aceita `'produto'` (serviços foram removidos); suporta `variants`, `promoPrice`, `hasVariants`, `barcode`, `specs`, texto-search indexado.
+
+## Backlog / Pendências
+
+- **CSRF origin check:** hoje em `server.js` está `BLOCK_CROSS_ORIGIN = false` (apenas registra em `security_events` no Mongo). Reativar para `true` quando ~1 semana sem eventos "suspeitos" de usuários reais (a lógica já tolera `www`/subdomínio/proxy que reescreve Host). `security_events` só grava em `NODE_ENV=production`.
+- **Shop de fabricantes:** avaliar possibilidade de baixar **imagens e descrições de produtos direto do fabricante** (importar ficha técnica/mídia automaticamente em vez de cadastrar manual). Design decidir: scraping, API oficial, ou alimentar `migracao/` (que gera os JSONs).
