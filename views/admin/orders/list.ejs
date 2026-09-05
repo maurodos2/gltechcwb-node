@@ -2,7 +2,14 @@
 
 <div class="page-header">
   <h1>Pedidos</h1>
+  <form method="POST" action="/admin/orders/clean" style="display:inline;" onsubmit="return confirm('Excluir todos os pedidos NÃO concluídos (aguardando pagamento ou cancelados)? Essa ação não pode ser desfeita.');">
+    <button type="submit" class="btn">Limpar não concluídos</button>
+  </form>
 </div>
+
+<% if (typeof cleaned !== 'undefined' && cleaned !== null) { %>
+  <div class="alert alert--success"><%= cleaned %> pedido(s) não concluído(s) excluído(s).</div>
+<% } %>
 
 <table class="data-table">
   <thead>

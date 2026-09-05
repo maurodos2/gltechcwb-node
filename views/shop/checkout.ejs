@@ -244,7 +244,12 @@
   function startPix() {
     btn.disabled = true;
     btn.textContent = 'Gerando Pix...';
-    fetch('/checkout/pix', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    var payload = JSON.stringify({ fulfillment: fulfillmentInput ? fulfillmentInput.value : 'delivery' });
+    fetch('/checkout/pix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: payload,
+    })
       .then(function (r) {
         if (r.redirected) { window.location.href = r.url; return null; }
         return r.json();

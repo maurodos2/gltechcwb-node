@@ -48,6 +48,7 @@ router.post('/mercadopago', async (req, res) => {
         if (orderId) {
           const order = await Order.findById(orderId);
           if (order) {
+            const wasPending = order.status === 'pending_payment';
             order.paymentProviderRef = String(paymentId);
 
             if (paymentData.status === 'approved') {
@@ -62,10 +63,19 @@ router.post('/mercadopago', async (req, res) => {
 
             await order.save();
 
-            // Enviar e-mail de confirmação (quando pagamento aprovado)
-            if (order.status === 'paid') {
+            if (order.status === 'paid' && wasPending) {
               try {
-                const mailService = require('../../../lib/mail');
+                const { decrementStockForOrder } = require('../../lib/stock');
+                await decrementStockForOrder(order);
+              } catch (stockErr) {
+                console.error('[webhook] Erro ao baixar estoque:', stockErr.message);
+              }
+            }
+
+            // Enviar e-mail de confirmação (quando pagamento aprovado)
+            if (order.status === 'paid' && wasPending) {
+              try {
+                const mailService = require('../../lib/mail');
                 await mailService.sendOrderConfirmation(order);
               } catch (mailErr) {
                 console.error('Erro ao enviar e-mail:', mailErr);

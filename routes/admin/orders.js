@@ -17,12 +17,19 @@ router.get('/', async (req, res) => {
 
   res.render('admin/orders/list', {
     orders,
+    cleaned: req.query.cleaned !== undefined ? Number(req.query.cleaned) : null,
     pagination: {
       total,
       page,
       pages: Math.ceil(total / perPage),
     },
   });
+});
+
+// POST /admin/orders/clean — excluir pedidos não concluídos (aguardando pagamento/cancelados)
+router.post('/clean', async (req, res) => {
+  const result = await Order.deleteMany({ status: { $in: ['pending_payment', 'cancelled'] } });
+  res.redirect('/admin/orders?cleaned=' + result.deletedCount);
 });
 
 // GET /admin/orders/:id — detalhe do pedido

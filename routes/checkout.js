@@ -176,19 +176,6 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
       paymentMethod: paymentMethod || 'pix',
     });
 
-    // Decrementar estoque
-    for (const item of cart.items) {
-      const update = { $inc: { stock: -item.quantity } };
-      if (item.variantId) {
-        await Product.updateOne(
-          { _id: item.productId, 'variants._id': item.variantId },
-          { $inc: { 'variants.$.stock': -item.quantity } }
-        );
-      } else {
-        await Product.updateOne({ _id: item.productId }, update);
-      }
-    }
-
     // Integração Mercado Pago
     const { MercadoPagoConfig, Preference } = require('mercadopago');
 
@@ -232,18 +219,8 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
     } catch (prefErr) {
       console.error('Erro ao criar pagamento no Mercado Pago:', prefErr.message);
 
-      // Reverte o pedido e o estoque para não deixar pedido órfão
+      // Como o estoque só é baixado após o pagamento, basta apagar o pedido
       await Order.findByIdAndDelete(order._id);
-      for (const item of cart.items) {
-        if (item.variantId) {
-          await Product.updateOne(
-            { _id: item.productId, 'variants._id': item.variantId },
-            { $inc: { 'variants.$.stock': item.quantity } }
-          );
-        } else {
-          await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } });
-        }
-      }
 
       return res.redirect('/checkout?error=pagamento_erro');
     }
@@ -343,8 +320,6 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
       paymentMethod: 'pix',
     });
 
-    await decrementStock(cart);
-
     const { MercadoPagoConfig, Payment } = require('mercadopago');
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
     const payment = new Payment(client);
@@ -368,7 +343,6 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
     } catch (payErr) {
       console.error('[checkout] Erro ao gerar Pix:', payErr.message);
       await Order.findByIdAndDelete(order._id);
-      await restoreStock(cart);
       return res.json({ success: false, message: 'Não foi possível gerar o Pix. Tente novamente.' });
     }
 
@@ -480,9 +454,6 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
       paymentMethod: 'credit_card',
     });
 
-    // Decrementar estoque (será revertido se o pagamento falhar)
-    await decrementStock(cart);
-
     // Processar pagamento no Mercado Pago
     const { MercadoPagoConfig, Payment } = require('mercadopago');
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
@@ -504,7 +475,6 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
     } catch (payErr) {
       console.error('[checkout] Erro ao processar cartão:', payErr.message);
       await Order.findByIdAndDelete(order._id);
-      await restoreStock(cart);
       return res.json({ success: false, message: 'Não foi possível processar o cartão. Tente novamente.' });
     }
 
@@ -519,6 +489,12 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
     req.session.shipping = null;
 
     if (order.status === 'paid') {
+      try {
+        const { decrementStockForOrder } = require('../lib/stock');
+        await decrementStockForOrder(order);
+      } catch (stockErr) {
+        console.error('[checkout] Erro ao baixar estoque pós-cartão:', stockErr.message);
+      }
       try {
         const { sendOrderConfirmation } = require('../lib/mail');
         await sendOrderConfirmation(order);
@@ -554,6 +530,7 @@ router.get('/sucesso', async (req, res) => {
       if (orderId) {
         const order = await Order.findById(orderId);
         if (order && order.status === 'pending_payment') {
+          const wasPending = true;
           if (data.status === 'approved') {
             order.status = 'paid';
           } else if (data.status === 'cancelled' || data.status === 'rejected') {
@@ -562,7 +539,13 @@ router.get('/sucesso', async (req, res) => {
           order.paymentProviderRef = String(payment_id);
           await order.save();
 
-          if (order.status === 'paid') {
+          if (order.status === 'paid' && wasPending) {
+            try {
+              const { decrementStockForOrder } = require('../lib/stock');
+              await decrementStockForOrder(order);
+            } catch (stockErr) {
+              console.error('[checkout] Erro ao baixar estoque pós-pagamento:', stockErr.message);
+            }
             try {
               const { sendOrderConfirmation } = require('../lib/mail');
               await sendOrderConfirmation(order);
@@ -609,32 +592,6 @@ function getRegion(uf) {
     if (states.includes(uf)) return region;
   }
   return 'sudeste';
-}
-
-async function decrementStock(cart) {
-  for (const item of cart.items) {
-    if (item.variantId) {
-      await Product.updateOne(
-        { _id: item.productId, 'variants._id': item.variantId },
-        { $inc: { 'variants.$.stock': -item.quantity } }
-      );
-    } else {
-      await Product.updateOne({ _id: item.productId }, { $inc: { stock: -item.quantity } });
-    }
-  }
-}
-
-async function restoreStock(cart) {
-  for (const item of cart.items) {
-    if (item.variantId) {
-      await Product.updateOne(
-        { _id: item.productId, 'variants._id': item.variantId },
-        { $inc: { 'variants.$.stock': item.quantity } }
-      );
-    } else {
-      await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } });
-    }
-  }
 }
 
 module.exports = router;
