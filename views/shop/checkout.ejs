@@ -205,7 +205,7 @@
   var hasShipping = <%= shipping ? true : false %>;
 
   function applyFulfillment() {
-    var sel = form.querySelector('input[name="fulfillment"]:checked');
+    var sel = document.querySelector('input[name="fulfillment"]:checked');
     var p = sel ? sel.value : 'delivery';
     var isPickup = p === 'pickup';
     if (fulfillmentInput) fulfillmentInput.value = p;
