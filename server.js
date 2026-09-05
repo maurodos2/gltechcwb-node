@@ -82,6 +82,7 @@ app.use((req, res, next) => {
       } catch (e) {
         /* origem malformada é ignorada */
       }
+      console.warn(`[seguranca] Origem recusada: ${req.method} ${req.originalUrl} | Origin=${req.headers.origin} | Referer=${req.headers.referer} | Host=${req.get('host')} | UA=${(req.get('user-agent') || '').slice(0, 80)}`);
       return res.status(403).send('Requisição rejeitada.');
     }
   }
