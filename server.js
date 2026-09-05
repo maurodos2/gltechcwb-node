@@ -4,6 +4,8 @@ const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo').default || require('connect-mongo');
 const methodOverride = require('method-override');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const connectDB = require('./config/db');
@@ -11,6 +13,9 @@ const { requireAdminAuth, attachAdminToLocals, attachCustomerToLocals } = requir
 const Category = require('./models/Category');
 
 const app = express();
+
+const isProd = process.env.NODE_ENV === 'production';
+app.set('trust proxy', 1);
 
 // ---- Helpers disponíveis nas views ----
 app.locals.formatPrice = (value) =>
@@ -34,17 +39,84 @@ app.locals.whatsappUrl = (number, text) => {
   return `https://wa.me/${digits}?text=${encodeURIComponent(text || '')}`;
 };
 
+// Serializa dados para inserir em <script> sem risco de quebra/XSS (</script>)
+app.locals.safeJson = (data) => JSON.stringify(data)
+  .replace(/</g, '\\u003c')
+  .replace(/>/g, '\\u003e')
+  .replace(/&/g, '\\u0026');
+
 // ---- Middlewares base ----
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.disable('x-powered-by');
+
+// Headers de segurança (CSP desabilitada: as views usam <script> inline)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false, // imagens do R2 são de outro domínio
+  })
+);
+
+// Limites de tamanho de corpo explícitos
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(methodOverride('_method')); // permite PUT/DELETE via ?_method= em forms HTML
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index: false }));
+
+// Verificação de origem (CSRF ativo): rejeita POST/PUT/DELETE de fora do próprio domínio.
+// Webhooks do Mercado Pago (HTTP POST sem Origin de verificação) ficam de fora.
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/webhooks')) return next();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const origin = req.headers.origin || req.headers.referer;
+    if (origin) {
+      try {
+        const hostname = new URL(origin).hostname;
+        const host = req.get('host').split(':')[0];
+        if (hostname === host) return next();
+      } catch (e) {
+        /* origem malformada é ignorada */
+      }
+      return res.status(403).send('Requisição rejeitada.');
+    }
+  }
+  next();
+});
+
+// Rate limit global para a API pública
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 300, // 300 requisições por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
+});
+app.use('/api', apiLimiter);
+
+// Rate limit para login (admin e cliente) contra força bruta
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // 10 tentativas por IP a cada 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.',
+});
+
+// Rate limit para operações de checkout (evita criar pedidos/pagamentos em loop)
+const checkoutLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20, // 20 operações por minuto por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas operações. Aguarde um momento.' },
+});
+app.use(['/checkout/pay', '/checkout/pix', '/checkout/frete'], checkoutLimiter);
 
 app.use(
   session({
+    name: 'gltech.sid',
     secret: process.env.SESSION_SECRET || 'dev-secret-troque-isso',
     resave: false,
     saveUninitialized: false,
@@ -52,6 +124,8 @@ app.use(
     cookie: {
       maxAge: 1000 * 60 * 60 * 8, // 8 horas
       httpOnly: true,
+      sameSite: 'lax',
+      secure: isProd,
     },
   })
 );
@@ -84,12 +158,15 @@ app.use('/api/barcode', require('./routes/api/barcode'));
 app.use('/', require('./routes/shop'));
 
 // ---- Conta do cliente ----
+app.use('/conta/login', loginLimiter);
+app.use('/conta/register', loginLimiter);
 app.use('/conta', require('./routes/customer'));
 
 // ---- Checkout ----
 app.use('/checkout', require('./routes/checkout'));
 
 // ---- Rotas do admin ----
+app.use('/admin/login', loginLimiter);
 app.use('/admin', require('./routes/admin/auth')); // login/logout ficam fora do requireAdminAuth
 app.use('/admin', requireAdminAuth, require('./routes/admin/dashboard'));
 app.use('/admin/products', requireAdminAuth, require('./routes/admin/products'));

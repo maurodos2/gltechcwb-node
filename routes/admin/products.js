@@ -6,7 +6,15 @@ const Category = require('../../models/Category');
 const { uploadImage, deleteImage } = require('../../lib/storage');
 
 // Imagens chegam em memória e são enviadas direto ao Cloudflare R2.
-const upload = multer({ storage: multer.memoryStorage() });
+const ALLOWED_IMAGE = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB por imagem
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_IMAGE.has(file.mimetype)) return cb(null, true);
+    cb(new Error('Formato de imagem inválido. Use JPG, PNG, WebP ou GIF.'));
+  },
+});
 
 function slugify(text) {
   return text
@@ -140,6 +148,14 @@ router.delete('/:id', async (req, res) => {
     console.error(err);
   }
   res.redirect('/admin/products');
+});
+
+// Erros de upload (tipo de arquivo ou tamanho) viram resposta clara em vez do 500 genérico
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || /^Formato de imagem/.test(err.message || '')) {
+    return res.status(400).send('Falha no upload: ' + err.message);
+  }
+  next(err);
 });
 
 module.exports = router;

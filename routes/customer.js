@@ -30,13 +30,20 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    req.session.customerId = customer._id;
-    req.session.customerName = customer.name;
-    req.session.customerEmail = customer.email;
-
+    // Regenera a sessão p/ evitar session fixation antes de autenticar
     const returnTo = req.session.returnTo || '/conta';
-    delete req.session.returnTo;
-    res.redirect(returnTo);
+    req.session.regenerate((err) => {
+      if (err) {
+        return res.render('customer/login', {
+          title: 'Entrar',
+          error: 'Erro ao iniciar a sessão. Tente novamente.',
+        });
+      }
+      req.session.customerId = customer._id;
+      req.session.customerName = customer.name;
+      req.session.customerEmail = customer.email;
+      res.redirect(returnTo);
+    });
   } catch (err) {
     console.error(err);
     res.render('customer/login', { title: 'Entrar', error: 'Erro ao fazer login.' });
@@ -68,10 +75,10 @@ router.post('/cadastro', async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.render('customer/register', {
         title: 'Criar conta',
-        error: 'A senha deve ter pelo menos 6 caracteres.',
+        error: 'A senha deve ter pelo menos 8 caracteres.',
       });
     }
 
@@ -90,13 +97,21 @@ router.post('/cadastro', async (req, res) => {
       phone: phone || '',
     });
 
-    req.session.customerId = customer._id;
-    req.session.customerName = customer.name;
-    req.session.customerEmail = customer.email;
+    req.session.regenerate((err) => {
+      if (err) {
+        return res.render('customer/register', {
+          title: 'Criar conta',
+          error: 'Erro ao iniciar a sessão. Tente novamente.',
+        });
+      }
+      req.session.customerId = customer._id;
+      req.session.customerName = customer.name;
+      req.session.customerEmail = customer.email;
 
-    const returnTo = req.session.returnTo || '/conta';
-    delete req.session.returnTo;
-    res.redirect(returnTo);
+      const returnTo = req.session.returnTo || '/conta';
+      delete req.session.returnTo;
+      res.redirect(returnTo);
+    });
   } catch (err) {
     console.error(err);
     res.render('customer/register', {

@@ -23,9 +23,18 @@ router.post('/login', async (req, res) => {
       return res.render('admin/login', { error: 'E-mail ou senha inválidos.', layout: false });
     }
 
-    req.session.adminId = admin._id.toString();
-    req.session.adminName = admin.name;
-    res.redirect('/admin');
+    // Regenera a sessão p/ evitar session fixation antes de autenticar
+    req.session.regenerate((err) => {
+      if (err) {
+        return res.render('admin/login', {
+          error: 'Erro ao iniciar a sessão. Tente novamente.',
+          layout: false,
+        });
+      }
+      req.session.adminId = admin._id.toString();
+      req.session.adminName = admin.name;
+      res.redirect('/admin');
+    });
   } catch (err) {
     console.error(err);
     res.render('admin/login', { error: 'Erro ao tentar entrar. Tente novamente.', layout: false });

@@ -45,7 +45,7 @@
       </div>
 
       <% if (product.hasVariants && product.variants.length) { %>
-        <script id="variant-data" type="application/json"><%- JSON.stringify(product.variants) %></script>
+        <script id="variant-data" type="application/json"><%- safeJson(product.variants) %></script>
         <div class="pdp-price">
           <div class="price">
             <span class="price__current" data-variant-price><%= formatPrice(product.variants[0].promoPrice || product.variants[0].price) %></span>
