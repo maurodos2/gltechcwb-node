@@ -67,15 +67,18 @@ app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index
 
 // Verificação de origem (CSRF ativo): rejeita POST/PUT/DELETE de fora do próprio domínio.
 // Webhooks do Mercado Pago (HTTP POST sem Origin de verificação) ficam de fora.
+// Ignora www/subdomínios: o Render pode normalizar o Host sem o www que o navegador envia no Origin.
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/webhooks')) return next();
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     const origin = req.headers.origin || req.headers.referer;
     if (origin) {
       try {
-        const hostname = new URL(origin).hostname;
-        const host = req.get('host').split(':')[0];
-        if (hostname === host) return next();
+        const apex = (h) => h.toLowerCase().replace(/^www\./, '');
+        const oh = apex(new URL(origin).hostname);
+        const host = apex(req.get('host').split(':')[0]);
+        const sameHost = oh === host || host.endsWith('.' + oh) || oh.endsWith('.' + host);
+        if (sameHost) return next();
       } catch (e) {
         /* origem malformada é ignorada */
       }
