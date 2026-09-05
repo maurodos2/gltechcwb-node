@@ -95,12 +95,14 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
-// Rate limit para login (admin e cliente) contra força bruta
+// Rate limit para login (admin e cliente) contra força bruta.
+// Conta apenas POSTs (tentativas reais); carregar a página de login não conta.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10, // 10 tentativas por IP a cada 15 min
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method !== 'POST',
   message: 'Muitas tentativas de login. Aguarde 15 minutos e tente novamente.',
 });
 
