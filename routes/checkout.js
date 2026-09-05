@@ -19,6 +19,7 @@ router.get('/', requireCustomerAuth, async (req, res) => {
     cart,
     customer,
     shipping: req.session.shipping || null,
+    mpPublicKey: process.env.MP_PUBLIC_KEY || '',
   });
 });
 
@@ -247,6 +248,136 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
   }
 });
 
+// POST /checkout/pay-card — pagamento com cartão dentro da própria loja (Checkout Bricks)
+router.post('/pay-card', requireCustomerAuth, async (req, res) => {
+  try {
+    const cart = req.session.cart;
+    if (!cart || !cart.items || !cart.items.length) {
+      return res.json({ success: false, message: 'Carrinho vazio.' });
+    }
+
+    const { token, installments } = req.body;
+    if (!token) {
+      return res.json({ success: false, message: 'Token de pagamento ausente.' });
+    }
+
+    const Customer = require('../models/Customer');
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) {
+      return res.json({ success: false, message: 'Faça login para continuar.' });
+    }
+
+    // Validar estoque antes de criar o pedido
+    for (const item of cart.items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.json({ success: false, message: 'Produto não encontrado.' });
+      }
+      if (item.variantId) {
+        const variant = product.variants.id(item.variantId);
+        if (!variant || variant.stock < item.quantity) {
+          return res.json({ success: false, message: 'Estoque insuficiente.' });
+        }
+      } else if (product.stock < item.quantity) {
+        return res.json({ success: false, message: 'Estoque insuficiente.' });
+      }
+    }
+
+    const itemsTotal = cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const shippingCost = req.session.shipping ? req.session.shipping.cost : 0;
+    const total = itemsTotal + shippingCost;
+
+    let shippingAddress = {};
+    if (req.session.shipping) {
+      shippingAddress = {
+        street: req.session.shipping.street,
+        district: req.session.shipping.district,
+        city: req.session.shipping.city,
+        state: req.session.shipping.state,
+        zipCode: req.session.shipping.zipCode,
+      };
+    }
+
+    // Criar pedido
+    const order = await Order.create({
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      },
+      shippingAddress,
+      items: cart.items.map((item) => ({
+        product: item.productId,
+        variantId: item.variantId || null,
+        name: item.name,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+      })),
+      itemsTotal,
+      shippingCost,
+      total,
+      status: 'pending_payment',
+      paymentMethod: 'credit_card',
+    });
+
+    // Decrementar estoque (será revertido se o pagamento falhar)
+    await decrementStock(cart);
+
+    // Processar pagamento no Mercado Pago
+    const { MercadoPagoConfig, Payment } = require('mercadopago');
+    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+    const payment = new Payment(client);
+
+    let paymentResult;
+    try {
+      paymentResult = await payment.create({
+        body: {
+          transaction_amount: total,
+          description: `Pedido ${String(order._id).slice(-8).toUpperCase()} - GLTechCWB`,
+          installments: Number(installments) || 1,
+          token,
+          payer: { email: customer.email },
+          external_reference: String(order._id),
+        },
+      });
+      order.paymentProviderRef = String(paymentResult.id);
+    } catch (payErr) {
+      console.error('[checkout] Erro ao processar cartão:', payErr.message);
+      await Order.findByIdAndDelete(order._id);
+      await restoreStock(cart);
+      return res.json({ success: false, message: 'Não foi possível processar o cartão. Tente novamente.' });
+    }
+
+    if (paymentResult.status === 'approved') {
+      order.status = 'paid';
+    } else if (paymentResult.status === 'rejected') {
+      order.status = 'cancelled';
+    }
+    await order.save();
+
+    req.session.cart = { items: [] };
+    req.session.shipping = null;
+
+    if (order.status === 'paid') {
+      try {
+        const { sendOrderConfirmation } = require('../../lib/mail');
+        await sendOrderConfirmation(order);
+      } catch (mailErr) {
+        console.error('[checkout] Erro ao enviar e-mail pós-cartão:', mailErr.message);
+      }
+    }
+
+    if (order.status === 'paid' || order.status === 'pending_payment') {
+      return res.json({ success: true, status: order.status, redirect: '/checkout/sucesso' });
+    }
+
+    return res.json({ success: false, message: 'Pagamento não aprovado. Tente novamente.' });
+  } catch (err) {
+    console.error('[checkout] Erro em pay-card:', err.message);
+    res.json({ success: false, message: 'Erro interno ao processar pagamento.' });
+  }
+});
+
 // GET /checkout/sucesso — página de sucesso + atualização do pedido
 router.get('/sucesso', async (req, res) => {
   const { payment_id } = req.query;
@@ -318,6 +449,32 @@ function getRegion(uf) {
     if (states.includes(uf)) return region;
   }
   return 'sudeste';
+}
+
+async function decrementStock(cart) {
+  for (const item of cart.items) {
+    if (item.variantId) {
+      await Product.updateOne(
+        { _id: item.productId, 'variants._id': item.variantId },
+        { $inc: { 'variants.$.stock': -item.quantity } }
+      );
+    } else {
+      await Product.updateOne({ _id: item.productId }, { $inc: { stock: -item.quantity } });
+    }
+  }
+}
+
+async function restoreStock(cart) {
+  for (const item of cart.items) {
+    if (item.variantId) {
+      await Product.updateOne(
+        { _id: item.productId, 'variants._id': item.variantId },
+        { $inc: { 'variants.$.stock': item.quantity } }
+      );
+    } else {
+      await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } });
+    }
+  }
 }
 
 module.exports = router;

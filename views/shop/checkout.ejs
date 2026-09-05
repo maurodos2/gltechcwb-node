@@ -2,6 +2,9 @@
 
 <div class="container checkout-page">
   <h1>Finalizar compra</h1>
+  <% const subtotal = cart.items.reduce(function(sum, item) { return sum + item.unitPrice * item.quantity; }, 0); %>
+  <% const shippingCost = shipping ? shipping.cost : 0; %>
+  <% const totalAmount = Math.round((subtotal + shippingCost) * 100) / 100; %>
 
   <% if (typeof error !== 'undefined' && error) { %>
     <div class="alert alert--error"><%= error %></div>
@@ -85,6 +88,7 @@
           </label>
         </div>
       </form>
+      <div id="card-payment-brick" style="display:none; margin-top:18px;"></div>
     </div>
   </div>
 
@@ -126,7 +130,7 @@
     </div>
 
     <% if (shipping) { %>
-      <button type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
+      <button id="pay-merchant" type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
         Pagar com Mercado Pago
       </button>
     <% } else { %>
@@ -134,5 +138,66 @@
     <% } %>
   </div>
 </div>
+<script src="https://sdk.mercadopago.com/js/v2?locale=pt-BR"></script>
+<script>
+  (function () {
+    const pixRadio = document.querySelector('input[name="paymentMethod"][value="pix"]');
+    const cardRadio = document.querySelector('input[name="paymentMethod"][value="credit_card"]');
+    const brickContainer = document.getElementById('card-payment-brick');
+    const merchantBtn = document.getElementById('pay-merchant');
+
+    if (!cardRadio || !brickContainer || !merchantBtn) return;
+
+    function syncPaymentUI() {
+      const isCard = cardRadio.checked;
+      merchantBtn.style.display = isCard ? 'none' : '';
+      brickContainer.style.display = isCard ? 'block' : 'none';
+      if (isCard && !window.__gltechCardBrick) {
+        initCardBrick();
+      }
+    }
+
+    async function initCardBrick() {
+      <% if (mpPublicKey) { %>
+      const mp = new MercadoPago('<%= mpPublicKey %>', { locale: 'pt-BR' });
+      const bricksBuilder = mp.bricks();
+
+      await bricksBuilder.create('cardPayment', 'card-payment-brick', {
+        initialization: { amount: <%= totalAmount %> },
+        callbacks: {
+          onSubmit: async (cardFormData) => {
+            try {
+              const response = await fetch('/checkout/pay-card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  token: cardFormData.token,
+                  installments: Number(cardFormData.installments) || 1,
+                }),
+              });
+              const data = await response.json();
+              if (data.success) {
+                window.location.href = data.redirect;
+              } else {
+                alert(data.message || 'Não foi possível concluir o pagamento.');
+              }
+            } catch (err) {
+              alert('Erro de conexão. Tente novamente.');
+            }
+          },
+        },
+      });
+      window.__gltechCardBrick = true;
+      <% } else { %>
+      brickContainer.innerHTML = '<p class="text-muted">Pagamento por cartão indisponível no momento.</p>';
+      window.__gltechCardBrick = true;
+      <% } %>
+    }
+
+    pixRadio.addEventListener('change', syncPaymentUI);
+    cardRadio.addEventListener('change', syncPaymentUI);
+    syncPaymentUI();
+  })();
+</script>
 
 <%- include('../partials/site-foot') %>
