@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Customer = require('../models/Customer');
+const Order = require('../models/Order');
 const { requireCustomerAuth } = require('../middleware/auth');
 
 // GET /conta/login
@@ -110,6 +111,46 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');
   });
+});
+
+// GET /conta/pedidos — listar pedidos do cliente
+router.get('/pedidos', requireCustomerAuth, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/conta/login');
+
+    const orders = await Order.find({ 'customer.email': customer.email })
+      .sort({ createdAt: -1 });
+
+    res.render('customer/orders', { title: 'Meus pedidos', orders, customer });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/conta');
+  }
+});
+
+// GET /conta/pedidos/:id — detalhe do pedido
+router.get('/pedidos/:id', requireCustomerAuth, async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) return res.redirect('/conta/login');
+
+    const order = await Order.findOne({
+      _id: req.params.id,
+      'customer.email': customer.email,
+    });
+
+    if (!order) return res.redirect('/conta/pedidos');
+
+    res.render('customer/order-detail', {
+      title: `Pedido #${String(order._id).slice(-8).toUpperCase()}`,
+      order,
+      customer,
+    });
+  } catch (err) {
+    console.error(err);
+    res.redirect('/conta/pedidos');
+  }
 });
 
 // GET /conta

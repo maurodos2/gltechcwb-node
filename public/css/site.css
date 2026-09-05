@@ -1738,6 +1738,13 @@ img {
 }
 
 /* ---- Order status pages ---- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 .order-status-page {
   max-width: 500px;
   margin: 64px auto;

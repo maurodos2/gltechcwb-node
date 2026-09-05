@@ -220,12 +220,48 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
   }
 });
 
-// GET /checkout/sucesso — página de sucesso
-router.get('/sucesso', (req, res) => {
+// GET /checkout/sucesso — página de sucesso + atualização do pedido
+router.get('/sucesso', async (req, res) => {
+  const { payment_id } = req.query;
+
+  // Ao retornar do Mercado Pago, verifica o status do pagamento e atualiza o pedido.
+  if (payment_id) {
+    try {
+      const { MercadoPagoConfig, Payment } = require('mercadopago');
+      const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+      const payment = new Payment(client);
+      const data = await payment.get({ id: payment_id });
+
+      const orderId = data.external_reference;
+      if (orderId) {
+        const order = await Order.findById(orderId);
+        if (order && order.status === 'pending_payment') {
+          if (data.status === 'approved') {
+            order.status = 'paid';
+          } else if (data.status === 'cancelled' || data.status === 'rejected') {
+            order.status = 'cancelled';
+          }
+          order.paymentProviderRef = String(payment_id);
+          await order.save();
+
+          if (order.status === 'paid') {
+            try {
+              const { sendOrderConfirmation } = require('../../lib/mail');
+              await sendOrderConfirmation(order);
+            } catch (mailErr) {
+              console.error('[checkout] Erro ao enviar e-mail pós-pagamento:', mailErr.message);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[checkout] Erro ao verificar pagamento no retorno:', err.message);
+    }
+  }
+
   res.render('shop/order-success', {
     title: 'Pedido realizado!',
-    payment_id: req.query.payment_id,
-    status: req.query.status,
+    payment_id: payment_id || null,
   });
 });
 

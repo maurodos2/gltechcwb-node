@@ -1,0 +1,58 @@
+<%- include('../partials/site-head', { title: title, navActive: 'account' }) %>
+
+<div class="container account-page">
+  <div class="page-header">
+    <div>
+      <h1>Pedido #<%= String(order._id).slice(-8).toUpperCase() %></h1>
+      <p><a href="/conta/pedidos" style="font-size:.88rem;color:var(--text-muted);">← Meus pedidos</a></p>
+    </div>
+    <span class="status-badge status-badge--<%= order.status %>">
+      <% const statusLabels = { pending_payment: 'Aguardando pagamento', paid: 'Pago', processing: 'Preparando', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' }; %>
+      <%= statusLabels[order.status] || order.status %>
+    </span>
+  </div>
+
+  <div class="order-detail-grid" style="margin-top:20px;">
+    <div class="order-detail-section">
+      <h2>Itens</h2>
+      <% order.items.forEach(function(item) { %>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <div>
+            <strong><%= item.name %></strong><br/>
+            <small class="text-muted">Qtd: <%= item.quantity %> × <%= formatPrice(item.unitPrice) %></small>
+          </div>
+          <strong><%= formatPrice(item.unitPrice * item.quantity) %></strong>
+        </div>
+      <% }) %>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;font-size:.9rem;">
+        <span>Subtotal</span><span><%= formatPrice(order.itemsTotal) %></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.9rem;">
+        <span>Frete</span><span><%= order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Grátis' %></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.05rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        <span>Total</span><span><%= formatPrice(order.total) %></span>
+      </div>
+    </div>
+
+    <div>
+      <div class="order-detail-section" style="margin-bottom:16px;">
+        <h2>Dados do pedido</h2>
+        <p><strong>Pedido:</strong> #<%= String(order._id).slice(-8).toUpperCase() %></p>
+        <p><strong>Data:</strong> <%= new Date(order.createdAt).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' }) %></p>
+        <p><strong>Pagamento:</strong> <%= order.paymentMethod === 'pix' ? 'Pix' : 'Cartão' %></p>
+      </div>
+
+      <% if (order.shippingAddress && order.shippingAddress.street) { %>
+        <div class="order-detail-section">
+          <h2>Endereço de entrega</h2>
+          <p><%= order.shippingAddress.street %><%= order.shippingAddress.number ? ', ' + order.shippingAddress.number : '' %><%= order.shippingAddress.complement ? ' — ' + order.shippingAddress.complement : '' %></p>
+          <p><%= order.shippingAddress.district ? order.shippingAddress.district + ' — ' : '' %><%= order.shippingAddress.city %> — <%= order.shippingAddress.state %></p>
+          <p>CEP: <%= order.shippingAddress.zipCode || '—' %></p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/site-foot') %>

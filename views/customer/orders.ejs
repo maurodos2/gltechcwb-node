@@ -1,0 +1,54 @@
+<%- include('../partials/site-head', { title: title, navActive: 'account' }) %>
+
+<div class="container account-page">
+  <div class="page-header">
+    <div>
+      <h1>Meus pedidos</h1>
+      <p><a href="/conta" style="font-size:.88rem;color:var(--text-muted);">← Minha conta</a></p>
+    </div>
+  </div>
+
+  <div class="order-list">
+    <% if (orders.length === 0) { %>
+      <div class="empty-state" style="margin-top:24px;">
+        <p class="text-muted">Você ainda não fez nenhum pedido.</p>
+        <p><a href="/produtos" class="btn btn--primary btn--sm">Ver produtos</a></p>
+      </div>
+    <% } %>
+
+    <% orders.forEach(function(order) { %>
+      <a href="/conta/pedidos/<%= order._id %>" class="order-card">
+        <div class="order-card__head">
+          <strong>#<%= String(order._id).slice(-8).toUpperCase() %></strong>
+          <span class="status-badge status-badge--<%= order.status %>">
+            <% const statusLabels = { pending_payment: 'Aguardando pagamento', paid: 'Pago', processing: 'Preparando', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' }; %>
+            <%= statusLabels[order.status] || order.status %>
+          </span>
+        </div>
+        <div class="order-card__body">
+          <span class="text-muted" style="font-size:.85rem;">
+            <%= new Date(order.createdAt).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }) %>
+            · <%= order.items.length %> <%= order.items.length === 1 ? 'item' : 'itens' %>
+          </span>
+          <strong style="margin-left:auto;"><%= formatPrice(order.total) %></strong>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</div>
+
+<style>
+  .order-list { margin-top:16px; display:flex; flex-direction:column; gap:12px; }
+  .order-card {
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px 18px;
+    text-decoration:none; color:inherit;
+    transition: box-shadow .15s;
+  }
+  .order-card:hover { box-shadow:0 2px 12px rgba(0,0,0,.06); }
+  .order-card__head { display:flex; justify-content:space-between; align-items:center; }
+  .order-card__body { display:flex; align-items:center; gap:8px; }
+</style>
+
+<%- include('../partials/site-foot') %>
