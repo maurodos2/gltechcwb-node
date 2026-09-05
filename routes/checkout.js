@@ -247,6 +247,136 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
   }
 });
 
+// POST /checkout/pix — gerar QR Code Pix direto na loja
+router.post('/pix', requireCustomerAuth, async (req, res) => {
+  try {
+    const cart = req.session.cart;
+    if (!cart || !cart.items || !cart.items.length) {
+      return res.json({ success: false, message: 'Carrinho vazio.' });
+    }
+
+    const Customer = require('../models/Customer');
+    const customer = await Customer.findById(req.session.customerId);
+    if (!customer) {
+      return res.json({ success: false, message: 'Faça login para continuar.' });
+    }
+
+    for (const item of cart.items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.json({ success: false, message: 'Produto não encontrado.' });
+      }
+      if (item.variantId) {
+        const variant = product.variants.id(item.variantId);
+        if (!variant || variant.stock < item.quantity) {
+          return res.json({ success: false, message: 'Estoque insuficiente.' });
+        }
+      } else if (product.stock < item.quantity) {
+        return res.json({ success: false, message: 'Estoque insuficiente.' });
+      }
+    }
+
+    const itemsTotal = cart.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const shippingCost = req.session.shipping ? req.session.shipping.cost : 0;
+    const total = Math.round((itemsTotal + shippingCost) * 100) / 100;
+
+    let shippingAddress = {};
+    if (req.session.shipping) {
+      shippingAddress = {
+        street: req.session.shipping.street,
+        district: req.session.shipping.district,
+        city: req.session.shipping.city,
+        state: req.session.shipping.state,
+        zipCode: req.session.shipping.zipCode,
+      };
+    }
+
+    const order = await Order.create({
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      },
+      shippingAddress,
+      items: cart.items.map((item) => ({
+        product: item.productId,
+        variantId: item.variantId || null,
+        name: item.name,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+      })),
+      itemsTotal,
+      shippingCost,
+      total,
+      status: 'pending_payment',
+      paymentMethod: 'pix',
+    });
+
+    await decrementStock(cart);
+
+    const { MercadoPagoConfig, Payment } = require('mercadopago');
+    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+    const payment = new Payment(client);
+
+    const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+
+    let paymentResult;
+    try {
+      paymentResult = await payment.create({
+        body: {
+          transaction_amount: total,
+          description: `Pedido ${String(order._id).slice(-8).toUpperCase()} - GLTechCWB`,
+          payment_method_id: 'pix',
+          payer: { email: customer.email },
+          external_reference: String(order._id),
+          notification_url: `${siteUrl}/api/webhooks/mercadopago`,
+        },
+      });
+      order.paymentProviderRef = String(paymentResult.id);
+      await order.save();
+    } catch (payErr) {
+      console.error('[checkout] Erro ao gerar Pix:', payErr.message);
+      await Order.findByIdAndDelete(order._id);
+      await restoreStock(cart);
+      return res.json({ success: false, message: 'Não foi possível gerar o Pix. Tente novamente.' });
+    }
+
+    const txData =
+      (paymentResult.point_of_interaction && paymentResult.point_of_interaction.transaction_data) || {};
+    const qrBase64 = txData.qr_code_base64 || paymentResult.qr_code_base64 || '';
+    const qrText = txData.qr_code || paymentResult.qr_code || '';
+
+    req.session.cart = { items: [] };
+    req.session.shipping = null;
+
+    return res.json({
+      success: true,
+      status: paymentResult.status,
+      paymentId: String(paymentResult.id),
+      expiresAt: paymentResult.date_of_expiration || null,
+      orderId: String(order._id),
+      qrBase64,
+      qrText,
+    });
+  } catch (err) {
+    console.error('[checkout] Erro ao gerar Pix:', err.message);
+    res.json({ success: false, message: 'Erro interno ao gerar o Pix.' });
+  }
+});
+
+// GET /checkout/pix-status — verifica se o Pix foi pago (usada pela loja)
+router.get('/pix-status', requireCustomerAuth, async (req, res) => {
+  const { paymentId } = req.query;
+  if (!paymentId) {
+    return res.json({ paid: false });
+  }
+  const order = await Order.findOne({ paymentProviderRef: String(paymentId) });
+  res.json({
+    paid: !!(order && order.status === 'paid'),
+    status: order ? order.status : 'not_found',
+  });
+});
+
 // POST /checkout/pay-card — pagamento com cartão dentro da própria loja (Checkout Bricks)
 router.post('/pay-card', requireCustomerAuth, async (req, res) => {
   try {

@@ -85,6 +85,8 @@
           </label>
         </div>
       </form>
+
+      <div id="pix-box" style="display:none;"></div>
     </div>
   </div>
 
@@ -126,9 +128,11 @@
     </div>
 
     <% if (shipping) { %>
-      <button type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
-        Pagar com Mercado Pago
-      </button>
+      <div id="payment-btn-wrap">
+        <button id="btn-pagar" type="submit" form="payment-form" class="btn btn--primary btn--full" style="margin-top:20px;">
+          Pagar com Mercado Pago
+        </button>
+      </div>
     <% } else { %>
       <p class="text-muted" style="text-align:center; margin-top:16px;">Informe o CEP para continuar</p>
     <% } %>
@@ -136,3 +140,107 @@
 </div>
 
 <%- include('../partials/site-foot') %>
+
+<script>
+(function () {
+  var form = document.getElementById('payment-form');
+  var btn = document.getElementById('btn-pagar');
+  var btnWrap = document.getElementById('payment-btn-wrap');
+  var pixBox = document.getElementById('pix-box');
+  if (!form || !btn || !pixBox) return;
+
+  var radios = form.querySelectorAll('input[name="paymentMethod"]');
+  var pollTimer = null;
+
+  function currentMethod() {
+    var sel = form.querySelector('input[name="paymentMethod"]:checked');
+    return sel ? sel.value : '';
+  }
+
+  function updateLabel() {
+    btn.textContent = currentMethod() === 'pix' ? 'Pagar com Pix' : 'Pagar com Cartão de Crédito';
+  }
+  radios.forEach(function (r) { r.addEventListener('change', updateLabel); });
+  updateLabel();
+
+  btn.addEventListener('click', function (e) {
+    if (currentMethod() !== 'pix') return;
+    e.preventDefault();
+    startPix();
+  });
+
+  function startPix() {
+    btn.disabled = true;
+    btn.textContent = 'Gerando Pix...';
+    fetch('/checkout/pix', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) {
+        if (r.redirected) { window.location.href = r.url; return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (!data.success) throw new Error(data.message || 'Não foi possível gerar o Pix.');
+        showPix(data);
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        updateLabel();
+        alert(err.message || 'Não foi possível gerar o Pix. Tente novamente.');
+      });
+  }
+
+  function showPix(data) {
+    form.style.display = 'none';
+    if (btnWrap) btnWrap.style.display = 'none';
+
+    var html = '<div class="pix-panel">';
+    html += '<p style="font-weight:600; margin-bottom:14px;">Escaneie o QR Code ou copie o código para pagar</p>';
+    if (data.qrBase64) {
+      html += '<img src="data:image/png;base64,' + data.qrBase64 + '" alt="QR Code Pix" />';
+    }
+    if (data.qrText) {
+      html += '<textarea id="pix-copy-key" readonly rows="4">' + data.qrText + '</textarea>';
+      html += '<button type="button" id="btn-copy-pix" class="btn btn--primary btn--full" style="margin-top:12px;">Copiar código Pix</button>';
+    }
+    html += '<p class="hint">A confirmação é automática após o pagamento.</p>';
+    html += '<p class="date">Pode fechar esta página e <a href="/conta/pedidos">acompanhar o pedido</a>.</p>';
+    html += '<p id="pix-confirm-msg" class="pix-confirmed" style="display:none;">Pagamento confirmado!</p>';
+    html += '</div>';
+    pixBox.innerHTML = html;
+    pixBox.style.display = 'block';
+
+    var copyBtn = document.getElementById('btn-copy-pix');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        var ta = document.getElementById('pix-copy-key');
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        try { document.execCommand('copy'); } catch (e) {}
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(data.qrText).catch(function () {});
+        }
+        copyBtn.textContent = 'Copiado!';
+        setTimeout(function () { copyBtn.textContent = 'Copiar código Pix'; }, 2000);
+      });
+    }
+
+    var tried = 0;
+    pollTimer = setInterval(function () {
+      tried++;
+      fetch('/checkout/pix-status?paymentId=' + encodeURIComponent(data.paymentId), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (s) {
+          if (s.paid) {
+            clearInterval(pollTimer);
+            var msg = document.getElementById('pix-confirm-msg');
+            if (msg) msg.style.display = 'flex';
+            window.setTimeout(function () { window.location.href = '/checkout/sucesso?payment_id=' + encodeURIComponent(data.paymentId); }, 2500);
+          }
+        })
+        .catch(function () {});
+      if (tried >= 120) clearInterval(pollTimer);
+    }, 5000);
+  }
+})();
+</script>

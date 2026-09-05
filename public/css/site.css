@@ -1738,6 +1738,58 @@ img {
   color: var(--text-muted);
 }
 
+.pix-panel {
+  margin-top: 12px;
+  text-align: center;
+  padding: 20px;
+  border: 1px solid var(--green-400);
+  border-radius: var(--radius-sm);
+  background: rgba(61, 220, 132, 0.05);
+}
+
+.pix-panel img {
+  width: 220px;
+  height: 220px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px;
+}
+
+.pix-panel textarea {
+  width: 100%;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  margin-top: 12px;
+  resize: none;
+}
+
+.pix-panel .hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 10px 0 0;
+}
+
+.pix-panel .date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.pix-confirmed {
+  color: var(--green-400);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 14px;
+  font-size: 1.05rem;
+}
+
 /* ---- Order status pages ---- */
 .page-header {
   display: flex;
