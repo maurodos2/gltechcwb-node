@@ -173,13 +173,16 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
     }
 
     // Integração Mercado Pago
-    const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+    const { MercadoPagoConfig, Preference } = require('mercadopago');
 
     const client = new MercadoPagoConfig({
       accessToken: process.env.MP_ACCESS_TOKEN,
     });
 
     const preference = new Preference(client);
+
+    const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+    const successUrl = `${siteUrl}/checkout/sucesso`;
 
     const preferenceBody = {
       items: cart.items.map((item) => ({
@@ -194,18 +197,42 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
       },
       external_reference: String(order._id),
       back_urls: {
-        success: `${process.env.SITE_URL || 'http://localhost:3000'}/checkout/sucesso`,
-        failure: `${process.env.SITE_URL || 'http://localhost:3000'}/checkout/falha`,
-        pending: `${process.env.SITE_URL || 'http://localhost:3000'}/checkout/pendente`,
+        success: successUrl,
+        failure: `${siteUrl}/checkout/falha`,
+        pending: `${siteUrl}/checkout/pendente`,
       },
-      auto_return: 'approved',
-      notification_url: `${process.env.SITE_URL || 'http://localhost:3000'}/api/webhooks/mercadopago`,
+      // O MP só aceita auto_return quando o back_url de sucesso é https
+      auto_return: successUrl.startsWith('https://') ? 'approved' : undefined,
+      notification_url: `${siteUrl}/api/webhooks/mercadopago`,
     };
 
-    const result = await preference.create({ body: preferenceBody });
+    let paymentRef;
+    let initPoint;
+    try {
+      const result = await preference.create({ body: preferenceBody });
+      paymentRef = result.id;
+      initPoint = result.init_point;
+    } catch (prefErr) {
+      console.error('Erro ao criar pagamento no Mercado Pago:', prefErr.message);
+
+      // Reverte o pedido e o estoque para não deixar pedido órfão
+      await Order.findByIdAndDelete(order._id);
+      for (const item of cart.items) {
+        if (item.variantId) {
+          await Product.updateOne(
+            { _id: item.productId, 'variants._id': item.variantId },
+            { $inc: { 'variants.$.stock': item.quantity } }
+          );
+        } else {
+          await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } });
+        }
+      }
+
+      return res.redirect('/checkout?error=pagamento_erro');
+    }
 
     // Atualizar pedido com referência do gateway
-    order.paymentProviderRef = result.id;
+    order.paymentProviderRef = paymentRef;
     await order.save();
 
     // Limpar carrinho
@@ -213,7 +240,7 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
     req.session.shipping = null;
 
     // Redirecionar para checkout do Mercado Pago
-    res.redirect(result.init_point);
+    res.redirect(initPoint);
   } catch (err) {
     console.error('Erro ao criar pagamento:', err);
     res.redirect('/checkout?error=pagamento_erro');
