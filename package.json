@@ -8,12 +8,14 @@
     "dev": "nodemon server.js",
     "seed": "node config/seed.js",
     "import-catalog": "node config/import-catalog.js",
+    "import-manufacturer": "node config/import-manufacturer.js",
     "remove-services": "node config/remove-services.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1121.0",
     "axios": "^1.20.0",
     "bcryptjs": "^2.4.3",
+    "cheerio": "^1.2.0",
     "connect-mongo": "^6.0.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",

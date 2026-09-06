@@ -213,6 +213,7 @@ app.use('/admin/products', requireAdminAuth, require('./routes/admin/products'))
 app.use('/admin/categories', requireAdminAuth, require('./routes/admin/categories'));
 app.use('/admin/orders', requireAdminAuth, require('./routes/admin/orders'));
 app.use('/admin/checkout', requireAdminAuth, require('./routes/admin/checkout'));
+app.use('/admin/imports', requireAdminAuth, require('./routes/admin/imports'));
 
 // ---- 404 ----
 app.use((req, res) => {

@@ -7,6 +7,7 @@ E-commerce `gltechcwb` — Express + MongoDB (Mongoose) + EJS. Storefront pt-BR:
 - `npm run dev` — nodemon em `server.js` (porta 3000).
 - `npm run seed` — cria o 1º admin a partir de `SEED_ADMIN_EMAIL/PASSWORD` do `.env` (idempotente). Necessário antes de `/admin` fazer login.
 - `npm run import-catalog -- migracao/categorias.json migracao/produtos.json` — upsert idempotente de catálogo por `slug` (categoria) e `sku` (produto). Hardcoda `type: 'produto'`.
+- `npm run import-manufacturer -- SKU [SKU...]` — ferramenta manual: pesquisa o site oficial do fabricante, baixa imagens (para o R2) e descrição (só se vazia). Mesma engine do painel `/admin/imports`. Pode repetir sem duplicar.
 - `npm run remove-services` — apaga todos os `type: 'servico'` e a categoria "Serviços Técnicos". Rodar para limpar serviços.
 
 Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env` → `npm run seed` → `npm run import-catalog -- migracao/categorias.json migracao/produtos.json`.
@@ -39,4 +40,4 @@ Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env
 ## Backlog / Pendências
 
 - **CSRF origin check:** hoje em `server.js` está `BLOCK_CROSS_ORIGIN = false` (apenas registra em `security_events` no Mongo). Reativar para `true` quando ~1 semana sem eventos "suspeitos" de usuários reais (a lógica já tolera `www`/subdomínio/proxy que reescreve Host). `security_events` só grava em `NODE_ENV=production`.
-- **Shop de fabricantes:** avaliar possibilidade de baixar **imagens e descrições de produtos direto do fabricante** (importar ficha técnica/mídia automaticamente em vez de cadastrar manual). Design decidir: scraping, API oficial, ou alimentar `migracao/` (que gera os JSONs).
+- **Shop de fabricantes:** ferramenta **manual** implementada (botão em `/admin/imports` + `npm run import-manufacturer`) com o importador **TP-Link** (live). Placeholders prontos em `lib/manufacturer/*`; `Product.manufacturerRef` guarda modelo/URL/fonte. Para novas marcas: criar importador em `lib/manufacturer/<marca>.js` (busca por modelo + extração de imagem/descrição), registrar em `lib/manufacturer/import.js` (`IMPORTADORES`) e, se preciso, estender `detectarMarca`/`extrairModelo`. Decisão de design: scraping do site oficial; o pilar por grau de acessibilidade é TP-Link (aceita busca por modelo).

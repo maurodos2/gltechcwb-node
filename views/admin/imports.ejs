@@ -1,0 +1,64 @@
+<%- include('../partials/admin-head', { title: 'Importar do fabricante' }) %>
+
+<div class="page-header">
+  <h1>Importar do fabricante</h1>
+</div>
+
+<% if (resultado) { %>
+  <% var r = resultado; var statusTxt = { ok: 'Concluído!', 'sem-modelo': 'Sem modelo', 'nao-encontrado': 'Não encontrado', 'sem-imagem': 'Sem imagem', 'erro-upload': 'Falha no upload', 'erro-save': 'Falha ao salvar', 'sem-importador': 'Sem importador', erro: 'Erro' }[r.status] || r.status; %>
+  <div class="alert <%= r.status === 'ok' ? 'alert--success' : 'alert--error' %>">
+    <strong><%= statusTxt %> — <%= r.nome %></strong>
+    <% if (r.status === 'ok') { %>
+      <span><%= r.imagensAdicionadas %> imagem(ns) adicionada(s) · total <%= r.totalImagens %>
+      <% if (r.descricaoAdicionada) { %>· descrição importada<% } %></span>
+    <% } else if (r.url) { %>
+      <span>Fonte oficial: <%= r.url %></span>
+    <% } %>
+    <% if (r.motivo) { %><span><%= r.motivo %></span><% } %>
+  </div>
+<% } %>
+
+<% if (!itens.length) { %>
+  <p>Nenhum produto com marca com importador (TP-Link, por enquanto). A importação também funciona via linha de comando:
+  <code>npm run import-manufacturer -- SKU</code>.</p>
+<% } else { %>
+  <p>Ferramenta manual: busque no site oficial do fabricante e traga imagens (para o R2) e descrição
+  (só se o produto ainda não tiver). Informe o modelo no campo se o nome não trouxer.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>SKU</th>
+        <th>Marca</th>
+        <th>Imagens</th>
+        <th>Modelo</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% itens.forEach(function(item) { var it = item; %>
+        <tr>
+          <td><%= it.produto.name %></td>
+          <td><%= it.produto.sku %></td>
+          <td><%= it.marca %></td>
+          <td><%= (it.produto.images || []).length %></td>
+          <td>
+            <form method="POST" action="/admin/imports/<%= it.produto._id %>" class="import-form">
+              <input type="text" name="modelo" value="<%= it.modelo %>" placeholder="automático"
+                     class="import-form__input" />
+              <button type="submit" class="btn btn--primary btn--sm">Importar</button>
+            </form>
+          </td>
+          <td>
+            <% if (it.produto.manufacturerRef && it.produto.manufacturerRef.url) { %>
+              <a href="<%= it.produto.manufacturerRef.url %>" target="_blank" rel="noopener">Página oficial</a>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('../partials/admin-foot') %>

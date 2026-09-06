@@ -116,6 +116,14 @@ const productSchema = new mongoose.Schema(
 
     weightKg: { type: Number, default: 0 },
 
+    // Referência do importador de fabricante (shop de fabricantes):
+    // guarda o modelo usado na busca e a URL oficial de onde vieram os dados.
+    manufacturerRef: {
+      model: { type: String, default: '' },
+      url: { type: String, default: '' },
+      importedAt: { type: Date, default: null },
+    },
+
     active: {
       type: Boolean,
       default: true,
