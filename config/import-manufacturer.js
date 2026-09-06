@@ -4,7 +4,7 @@
  *
  * Uso:
  *   npm run import-manufacturer -- SKU [SKU ...]
- *   npm run import-manufacturer -- REC-0003 REC-0007
+ *   npm run import-manufacturer -- SKU --modelo "NVD 1432"   (modelo manual)
  *
  * Roda manualmente, quando quiser. Pode repetir sem duplicar imagens.
  */
@@ -29,9 +29,22 @@ function statusTxt(status) {
 }
 
 async function main() {
-  const skus = process.argv.slice(2).filter((a) => !a.startsWith('-'));
+  const args = process.argv.slice(2);
+  let modeloOverride = '';
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--modelo') {
+      modeloOverride = (args[i + 1] || '').trim();
+      args.splice(i, 2);
+      i--;
+    } else if (args[i].startsWith('--modelo=')) {
+      modeloOverride = args[i].slice('--modelo='.length).trim();
+      args.splice(i, 1);
+      i--;
+    }
+  }
+  const skus = args.filter((a) => !a.startsWith('-'));
   if (!skus.length) {
-    console.error('Uso: npm run import-manufacturer -- SKU [SKU ...]');
+    console.error('Uso: npm run import-manufacturer -- SKU [SKU ...] [--modelo "MODELO"]');
     process.exit(2);
   }
 
@@ -46,7 +59,7 @@ async function main() {
 
   for (const produto of produtos) {
     console.log(`\n== ${produto.sku} — ${produto.name}`);
-    const r = await manufacturer.importarProduto(produto);
+    const r = await manufacturer.importarProduto(produto, { modelo: modeloOverride });
     console.log(`   -> ${statusTxt(r.status)}`);
     if (r.status === 'ok') {
       console.log(`      imagens: +${r.imagensAdicionadas} (total ${r.totalImagens})`);
