@@ -233,6 +233,7 @@ app.use('/admin/orders', requireAdminAuth, require('./routes/admin/orders'));
 app.use('/admin/checkout', requireAdminAuth, require('./routes/admin/checkout'));
 app.use('/admin/imports', requireAdminAuth, require('./routes/admin/imports'));
 app.use('/admin/whatsapp', requireAdminAuth, require('./routes/admin/whatsapp'));
+app.use('/admin/mail', requireAdminAuth, require('./routes/admin/mail'));
 
 // ---- 404 ----
 app.use((req, res) => {

@@ -1,0 +1,38 @@
+<%- include('../partials/admin-head', { title: 'Teste de e-mail' }) %>
+
+<div class="page-header">
+  <h1>Teste de e-mail (SMTP)</h1>
+</div>
+
+<% if (msg) { %>
+  <div class="alert alert--<%= msg.indexOf('Falha') === 0 ? 'error' : 'success' %>"><%= msg %></div>
+<% } %>
+
+<p><strong>Servidor:</strong> <code><%= smtpHost %>:<%= smtpPort %></code></p>
+<p><strong>Remetente</strong> (<code>EMAIL_FROM</code>): <code><%= from || 'não configurado, usa SMTP_USER' %></code></p>
+<p><strong>Usuário logado</strong> (<code>SMTP_USER</code>): <code><%= configurado ? 'configurado' : 'NÃO configurado no .env' %></code></p>
+
+<% if (!configurado) { %>
+  <div class="alert alert--error">Defina <code>SMTP_USER</code> e <code>SMTP_PASS</code> (e opcionalmente <code>EMAIL_FROM</code>) no <code>.env</code> para poder enviar.</div>
+<% } %>
+
+<form method="POST" action="/admin/mail/test" class="import-form">
+  <div>
+    <input type="email" name="to" placeholder="destinatário@exemplo.com" class="import-form__input" required style="margin-bottom:8px" />
+  </div>
+  <div>
+    <input type="text" name="subject" placeholder="Assunto (opcional)" class="import-form__input" style="margin-bottom:8px" />
+  </div>
+  <div>
+    <textarea name="mensagem" rows="6" placeholder="Mensagem de teste" class="import-form__input" style="width:100%;margin-bottom:8px"></textarea>
+  </div>
+  <button type="submit" class="btn btn--primary">Enviar teste</button>
+</form>
+
+<h2 style="margin-top:24px">E-mails padrão da loja</h2>
+<ul>
+  <li>Confirmação de pedido → <code>lib/mail.js → sendOrderConfirmation</code> (template <code>views/emails/order-confirmation.ejs</code>)</li>
+  <li>Este teste usa <code>sendMail</code> (mesmo SMTP). Se o teste falhar, o envio dos pedidos também falha.</li>
+</ul>
+
+<%- include('../partials/admin-foot') %>
