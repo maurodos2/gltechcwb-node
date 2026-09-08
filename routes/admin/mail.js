@@ -34,29 +34,33 @@ function avecTimeout(promise, ms) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-// GET /admin/mail — formulário para teste de envio via SMTP (Zoho) + diagnóstico de saída
+// GET /admin/mail — formulário para teste de envio + estado do provedor
 router.get('/', async (req, res) => {
   const msg = String(req.query.msg || '');
   const smtpHost = process.env.SMTP_HOST || 'smtp.zoho.com';
+  const provedorResend = !!process.env.RESEND_API_KEY;
 
   let diagnostico = null;
-  try {
-    const [ips, portas, ipExterno] = await Promise.all([
-      dns.resolve4(smtpHost).catch(() => []),
-      Promise.all([587, 465, 25].map((p) => testaPorta(smtpHost, p))),
-      fetch('https://api.ipify.org?format=json')
-        .then((r) => r.json())
-        .then((j) => j.ip || '')
-        .catch(() => ''),
-    ]);
-    diagnostico = { ips: ips.slice(0, 4), portas, ipExterno };
-  } catch (e) {
-    console.error('[mail] Falha no diagnóstico:', e);
+  if (!provedorResend) {
+    try {
+      const [ips, portas, ipExterno] = await Promise.all([
+        dns.resolve4(smtpHost).catch(() => []),
+        Promise.all([587, 465, 25].map((p) => testaPorta(smtpHost, p))),
+        fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(10000) })
+          .then((r) => r.json())
+          .then((j) => j.ip || '')
+          .catch(() => ''),
+      ]);
+      diagnostico = { ips: ips.slice(0, 4), portas, ipExterno };
+    } catch (e) {
+      console.error('[mail] Falha no diagnóstico:', e);
+    }
   }
 
   res.render('admin/mail', {
     msg,
-    configurado: !!process.env.SMTP_USER,
+    provedorResend,
+    temSmptConfig: !!process.env.SMTP_USER,
     smtpHost,
     smtpPort: process.env.SMTP_PORT || '587',
     smtpSecure: process.env.SMTP_SECURE === undefined ? 'padrão' : process.env.SMTP_SECURE,

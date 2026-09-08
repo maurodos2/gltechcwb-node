@@ -30,7 +30,7 @@ Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env
 
 - `server.js` é o ponto único de montagem: qualquer rota nova precisa ser `app.use(...)` lá.
 - `routes/api/*` são a API pública JSON; `routes/admin/*` são protegidos por `requireAdminAuth` (exceto `auth.js`, montado antes do guard); `requirements` de cliente usam `requireCustomerAuth`.
-- `lib/` tem `mail.js` (SMTP Zoho/nodemailer) e `storage.js` (upload de imagens no Cloudflare R2 via S3 SDK; `R2_*` no `.env`, upload em memória no admin). Mercado Pago e frete estão embutidos em `routes/checkout.js` e `routes/api/shipping.js`.
+- `lib/` tem `mail.js` (e-mail transacional: **Resend** por API HTTPS quando `RESEND_API_KEY` existe — usado em produção — e fallback SMTP Zoho para dev) e `storage.js` (upload de imagens no Cloudflare R2 via S3 SDK; `R2_*` no `.env`, upload em memória no admin). Mercado Pago e frete estão embutidos em `routes/checkout.js` e `routes/api/shipping.js`.
 - Frete usa ViaCEP + tabela simulada (não é a API dos Correios ainda).
 - Imagens de produto: `Product.images` guarda URLs completas do R2 (`R2_PUBLIC_BASE_URL/produtos/...`); `public/uploads` não é mais usado para novos uploads.
 - `migracao/` contém scripts Python que **geram** `categorias.json`/`produtos.json`; não editar os JSONs como fonte.

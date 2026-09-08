@@ -1,34 +1,36 @@
 <%- include('../partials/admin-head', { title: 'Teste de e-mail' }) %>
 
 <div class="page-header">
-  <h1>Teste de e-mail (SMTP)</h1>
+  <h1>Teste de e-mail</h1>
 </div>
 
 <% if (msg) { %>
   <div class="alert alert--<%= msg.indexOf('Falha') === 0 ? 'error' : 'success' %>"><%= msg %></div>
 <% } %>
 
-<p><strong>Servidor:</strong> <code><%= smtpHost %>:<%= smtpPort %></code> <small>(<%= smtpSecure === 'padrão' ? 'STARTTLS por padrão' : smtpSecure === 'true' ? 'SSL/TLS direto' : 'STARTTLS' %>)</small></p>
-<p><strong>Remetente</strong> (<code>EMAIL_FROM</code>): <code><%= from || 'não configurado, usa SMTP_USER' %></code></p>
-<p><strong>Usuário logado</strong> (<code>SMTP_USER</code>): <code><%= configurado ? 'configurado' : 'NÃO configurado no .env' %></code></p>
-
-<h2 style="margin-top:24px">Conexão de saída (diagnóstico)</h2>
-<% if (!diagnostico) { %>
-  <p>Diagnóstico indisponível…</p>
+<% if (provedorResend) { %>
+  <p><strong>Provedor ativo:</strong> <span class="badge">Resend (API HTTPS)</span> — recomendado para produção.</p>
+  <p><strong>Remetente</strong> (<code>EMAIL_FROM</code>): <code><%= from || 'não configurado' %></code></p>
+  <p><small>O domínio/e-mail do remetente precisa estar verificado na conta Resend.</small></p>
 <% } else { %>
-  <p><strong>IP de saída deste servidor (Render):</strong> <code><%= diagnostico.ipExterno || 'não identificado' %></code></p>
-  <p><strong>DNS <code><%= smtpHost %></code> →</strong> <code><%= diagnostico.ips.join(', ') || 'sem resolução' %></code></p>
-  <p><strong>Aberturas TCP:</strong></p>
-  <ul>
-    <% diagnostico.portas.forEach(function(p) { %>
-      <li>porta <strong><%= p.port %></strong> → <span class="badge"><%= p.ok ? 'ACESSÍVEL' : 'FALHOU (' + p.erro + ')' %></span></li>
-    <% }) %>
-  </ul>
-  <p><small>Se todas falharem, o problema é a rede do Render em direção ao Zoho — não o seu código. Veja abaixo as alternativas.</small></p>
-<% } %>
+  <p><strong>Provedor ativo:</strong> <span class="badge">SMTP</span> <code><%= smtpHost %>:<%= smtpPort %></code> <small>(<%= smtpSecure === 'padrão' ? 'STARTTLS por padrão' : smtpSecure === 'true' ? 'SSL/TLS direto' : 'STARTTLS' %>)</small></p>
+  <p><strong>Remetente</strong> (<code>EMAIL_FROM</code>): <code><%= from || 'não configurado, usa SMTP_USER' %></code></p>
+  <p><strong>Usuário logado</strong> (<code>SMTP_USER</code>): <code><%= temSmptConfig ? 'configurado' : 'NÃO configurado' %></code></p>
+  <p class="alert alert--error">Do Render, o SMTP do Zoho não é alcançável (timeout em 587/465/25). Para produção, configure <code>RESEND_API_KEY</code>.</p>
 
-<% if (!configurado) { %>
-  <div class="alert alert--error">Defina <code>SMTP_USER</code> e <code>SMTP_PASS</code> (e opcionalmente <code>EMAIL_FROM</code>) no <code>.env</code> para poder enviar.</div>
+  <h2 style="margin-top:24px">Conexão de saída (diagnóstico)</h2>
+  <% if (!diagnostico) { %>
+    <p>Diagnóstico indisponível…</p>
+  <% } else { %>
+    <p><strong>IP de saída deste servidor (Render):</strong> <code><%= diagnostico.ipExterno || 'não identificado' %></code></p>
+    <p><strong>DNS <code><%= smtpHost %></code> →</strong> <code><%= diagnostico.ips.join(', ') || 'sem resolução' %></code></p>
+    <p><strong>Aberturas TCP:</strong></p>
+    <ul>
+      <% diagnostico.portas.forEach(function(p) { %>
+        <li>porta <strong><%= p.port %></strong> → <span class="badge"><%= p.ok ? 'ACESSÍVEL' : 'FALHOU (' + p.erro + ')' %></span></li>
+      <% }) %>
+    </ul>
+  <% } %>
 <% } %>
 
 <form method="POST" action="/admin/mail/test" class="import-form">
@@ -47,7 +49,7 @@
 <h2 style="margin-top:24px">E-mails padrão da loja</h2>
 <ul>
   <li>Confirmação de pedido → <code>lib/mail.js → sendOrderConfirmation</code> (template <code>views/emails/order-confirmation.ejs</code>)</li>
-  <li>Este teste usa <code>sendMail</code> (mesmo SMTP). Se o teste falhar, o envio dos pedidos também falha.</li>
+  <li>Este teste usa <code>sendMail</code> (mesmo caminho dos pedidos). Se o teste falhar, o envio da loja também falha.</li>
 </ul>
 
 <%- include('../partials/admin-foot') %>
