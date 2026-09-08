@@ -8,9 +8,24 @@
   <div class="alert alert--<%= msg.indexOf('Falha') === 0 ? 'error' : 'success' %>"><%= msg %></div>
 <% } %>
 
-<p><strong>Servidor:</strong> <code><%= smtpHost %>:<%= smtpPort %></code></p>
+<p><strong>Servidor:</strong> <code><%= smtpHost %>:<%= smtpPort %></code> <small>(<%= smtpSecure === 'padrão' ? 'STARTTLS por padrão' : smtpSecure === 'true' ? 'SSL/TLS direto' : 'STARTTLS' %>)</small></p>
 <p><strong>Remetente</strong> (<code>EMAIL_FROM</code>): <code><%= from || 'não configurado, usa SMTP_USER' %></code></p>
 <p><strong>Usuário logado</strong> (<code>SMTP_USER</code>): <code><%= configurado ? 'configurado' : 'NÃO configurado no .env' %></code></p>
+
+<h2 style="margin-top:24px">Conexão de saída (diagnóstico)</h2>
+<% if (!diagnostico) { %>
+  <p>Diagnóstico indisponível…</p>
+<% } else { %>
+  <p><strong>IP de saída deste servidor (Render):</strong> <code><%= diagnostico.ipExterno || 'não identificado' %></code></p>
+  <p><strong>DNS <code><%= smtpHost %></code> →</strong> <code><%= diagnostico.ips.join(', ') || 'sem resolução' %></code></p>
+  <p><strong>Aberturas TCP:</strong></p>
+  <ul>
+    <% diagnostico.portas.forEach(function(p) { %>
+      <li>porta <strong><%= p.port %></strong> → <span class="badge"><%= p.ok ? 'ACESSÍVEL' : 'FALHOU (' + p.erro + ')' %></span></li>
+    <% }) %>
+  </ul>
+  <p><small>Se todas falharem, o problema é a rede do Render em direção ao Zoho — não o seu código. Veja abaixo as alternativas.</small></p>
+<% } %>
 
 <% if (!configurado) { %>
   <div class="alert alert--error">Defina <code>SMTP_USER</code> e <code>SMTP_PASS</code> (e opcionalmente <code>EMAIL_FROM</code>) no <code>.env</code> para poder enviar.</div>

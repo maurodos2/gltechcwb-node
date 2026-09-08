@@ -1,6 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const dns = require('dns').promises;
+const net = require('net');
 const { sendMail } = require('../../lib/mail');
+
+// Testa abertura de conexão TCP em uma porta (diagnóstico de saída do servidor)
+function testaPorta(host, port, ms = 10000) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    const fim = (r) => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(r);
+    };
+    const timer = setTimeout(() => fim({ port, ok: false, erro: 'timeout' }), ms);
+    socket.setTimeout(ms);
+    socket.once('connect', () => fim({ port, ok: true, erro: null }));
+    socket.once('timeout', () => fim({ port, ok: false, erro: 'timeout' }));
+    socket.once('error', (e) => fim({ port, ok: false, erro: e.code || e.message }));
+    socket.connect({ host, port });
+  });
+}
 
 // Garante retorno em tempo máximo; evita spinner infinito se o SMTP travar
 function avecTimeout(promise, ms) {
@@ -14,15 +34,34 @@ function avecTimeout(promise, ms) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-// GET /admin/mail — formulário para teste de envio via SMTP (Zoho)
-router.get('/', (req, res) => {
+// GET /admin/mail — formulário para teste de envio via SMTP (Zoho) + diagnóstico de saída
+router.get('/', async (req, res) => {
   const msg = String(req.query.msg || '');
+  const smtpHost = process.env.SMTP_HOST || 'smtp.zoho.com';
+
+  let diagnostico = null;
+  try {
+    const [ips, portas, ipExterno] = await Promise.all([
+      dns.resolve4(smtpHost).catch(() => []),
+      Promise.all([587, 465, 25].map((p) => testaPorta(smtpHost, p))),
+      fetch('https://api.ipify.org?format=json')
+        .then((r) => r.json())
+        .then((j) => j.ip || '')
+        .catch(() => ''),
+    ]);
+    diagnostico = { ips: ips.slice(0, 4), portas, ipExterno };
+  } catch (e) {
+    console.error('[mail] Falha no diagnóstico:', e);
+  }
+
   res.render('admin/mail', {
     msg,
     configurado: !!process.env.SMTP_USER,
-    smtpHost: process.env.SMTP_HOST || 'smtp.zoho.com',
-    smtpPort: process.env.SMTP_PORT || '465',
+    smtpHost,
+    smtpPort: process.env.SMTP_PORT || '587',
+    smtpSecure: process.env.SMTP_SECURE === undefined ? 'padrão' : process.env.SMTP_SECURE,
     from: process.env.EMAIL_FROM || process.env.SMTP_USER || '',
+    diagnostico,
   });
 });
 
