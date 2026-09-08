@@ -40,7 +40,6 @@ const conversationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-conversationSchema.index({ waId: 1 }, { unique: true });
 conversationSchema.index({ lastMessageAt: -1 });
 
 module.exports = mongoose.model('Conversation', conversationSchema);

@@ -42,6 +42,47 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const [categories, products] = await Promise.all([
+      Category.find({ active: true }).select('slug updatedAt'),
+      Product.find({ active: true }).select('slug updatedAt'),
+    ]);
+
+    const siteUrl = `${req.protocol}://${req.get('host')}`;
+    const lastmod = (d) => (d && typeof d.toISOString === 'function' ? d.toISOString().slice(0, 10) : '');
+    const urlEntries = [
+      { loc: `${siteUrl}/`, changefreq: 'daily', priority: '1.0' },
+      { loc: `${siteUrl}/produtos`, changefreq: 'daily', priority: '0.9' },
+      ...categories.map((c) => ({
+        loc: `${siteUrl}/categoria/${c.slug}`,
+        lastmod: lastmod(c.updatedAt),
+        changefreq: 'weekly',
+        priority: '0.8',
+      })),
+      ...products.map((p) => ({
+        loc: `${siteUrl}/produto/${p.slug}`,
+        lastmod: lastmod(p.updatedAt),
+        changefreq: 'weekly',
+        priority: '0.7',
+      })),
+    ];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlEntries
+      .map((u) => {
+        let entry = `  <url>\n    <loc>${u.loc}</loc>\n`;
+        if (u.lastmod) entry += `    <lastmod>${u.lastmod}</lastmod>\n`;
+        entry += `    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`;
+        return entry;
+      })
+      .join('\n')}\n</urlset>`;
+
+    res.type('application/xml').send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/produtos', async (req, res, next) => {
   try {
     const rendered = await renderCatalog(req, res, null);

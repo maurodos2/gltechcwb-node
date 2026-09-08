@@ -173,6 +173,13 @@ app.use(
 app.use(attachAdminToLocals);
 app.use(attachCustomerToLocals);
 
+// URL canônica do site público (base para <link rel="canonical"> e sitemap)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/admin') || req.path.startsWith('/api')) return next();
+  res.locals.canonicalUrl = `${req.protocol}://${req.get('host')}${req.path}`;
+  next();
+});
+
 // Dados compartilhados pelo site público (menu de categorias, contato)
 app.use(async (req, res, next) => {
   if (req.path.startsWith('/admin') || req.path.startsWith('/api')) return next();

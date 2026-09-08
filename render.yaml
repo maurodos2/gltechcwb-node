@@ -15,7 +15,7 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       - key: SITE_URL
-        value: https://www.gltechcwb.com
+        value: https://gltechcwb.com
       - key: CONTACT_EMAIL
         sync: false
       - key: CONTACT_WHATSAPP
