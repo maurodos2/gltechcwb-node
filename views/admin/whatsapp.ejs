@@ -1,0 +1,49 @@
+<%- include('../partials/admin-head', { title: 'Atendimento do WhatsApp' }) %>
+
+<div class="page-header">
+  <h1>Atendimento do WhatsApp</h1>
+</div>
+
+<% if (msg) { %>
+  <div class="alert alert--success"><%= msg %></div>
+<% } %>
+
+<form method="POST" action="/admin/whatsapp/start" style="display:inline">
+  <button type="submit" class="btn btn--primary">Reconectar / Iniciar bot</button>
+</form>
+<form method="POST" action="/admin/whatsapp/logout" style="display:inline">
+  <button type="submit" class="btn">Desconectar (apaga sessão)</button>
+</form>
+
+<h2 style="margin-top:24px">Status: <span class="badge"><%= estado.status %></span></h2>
+
+<% if (estado.status === 'pronto') { %>
+  <p>Bot conectado em <strong><%= estado.numero %></strong> · desde <%= new Date(estado.iniciadoEm).toLocaleString('pt-BR') %>.</p>
+  <p>Grupo de atendimento humano: <code><%= grupo || 'não configurado' %></code></p>
+
+  <h3>Enviar mensagem de teste</h3>
+  <form method="POST" action="/admin/whatsapp/send" class="import-form">
+    <input type="text" name="numero" placeholder="55 41 99999-9999" class="import-form__input" required style="margin-right:8px" />
+    <input type="text" name="texto" placeholder="Mensagem" class="import-form__input" required />
+    <button type="submit" class="btn btn--primary btn--sm">Enviar</button>
+  </form>
+<% } else if (estado.status === 'aguardando-qr') { %>
+  <% if (qrDataUrl) { %>
+    <p>Escaneie o QR abaixo com o WhatsApp do número da loja<br />(WhatsApp &gt; Aparelhos conectados &gt; Conectar aparelho):</p>
+    <img src="<%= qrDataUrl %>" alt="QR code do WhatsApp" style="border:1px solid #ddd;border-radius:8px" />
+  <% } else { %>
+    <p>Gerando QR… <a href="/admin/whatsapp">atualizar</a>.</p>
+  <% } %>
+  <p style="margin-top:12px;color:#888">Esta página recarrega automaticamente enquanto aguardamos a leitura.</p>
+  <meta http-equiv="refresh" content="4">
+<% } else if (estado.status === 'conectando') { %>
+  <p>Conectando à sessão…</p>
+  <meta http-equiv="refresh" content="3">
+<% } else if (estado.status === 'desconectado' || estado.status === 'erro') { %>
+  <p style="color:#b00020"><%= estado.ultimoErro %></p>
+<% } else { %>
+  <p>O bot está desligado.</p>
+  <p><small>Para ativar no boot, defina <code>WHATSAPP_BOT_ENABLED=true</code> no <code>.env</code> e reinicie.</small></p>
+<% } %>
+
+<%- include('../partials/admin-foot') %>

@@ -214,6 +214,7 @@ app.use('/admin/categories', requireAdminAuth, require('./routes/admin/categorie
 app.use('/admin/orders', requireAdminAuth, require('./routes/admin/orders'));
 app.use('/admin/checkout', requireAdminAuth, require('./routes/admin/checkout'));
 app.use('/admin/imports', requireAdminAuth, require('./routes/admin/imports'));
+app.use('/admin/whatsapp', requireAdminAuth, require('./routes/admin/whatsapp'));
 
 // ---- 404 ----
 app.use((req, res) => {
@@ -230,8 +231,14 @@ app.use((err, req, res, next) => {
 // ---- Inicialização ----
 const PORT = process.env.PORT || 3000;
 
-connectDB().then(() => {
+connectDB().then(async () => {
   app.listen(PORT, () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);
   });
+
+  if (process.env.WHATSAPP_BOT_ENABLED === 'true') {
+    require('./lib/whatsapp/service')
+      .init()
+      .catch((e) => console.error('[whatsapp] falha ao iniciar bot:', e));
+  }
 });
