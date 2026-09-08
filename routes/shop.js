@@ -119,10 +119,61 @@ router.get('/produto/:slug', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(4);
 
+    const { effectivePrice, minVariantPrice } = req.app.locals;
+    const pageUrl = `${req.protocol}://${req.get('host')}${req.path}`;
+    const inStock = !product.hasVariants
+      ? product.stock > 0
+      : product.variants.some((v) => v.stock > 0);
+    const price = product.hasVariants
+      ? minVariantPrice(product)
+      : effectivePrice(product);
+
+    const ld = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.shortDescription || product.seoDescription || product.name,
+      sku: product.sku,
+      offers: {
+        '@type': 'Offer',
+        url: pageUrl,
+        priceCurrency: 'BRL',
+        price,
+        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      },
+    };
+    if (product.brand) ld.brand = { '@type': 'Brand', name: product.brand };
+    if (product.images && product.images.length) ld.image = product.images[0];
+
+    const crumbs = [
+      { position: 1, name: 'Início', item: pageUrl.split('/produto')[0] + '/' },
+      { position: 2, name: 'Produtos', item: `${pageUrl.split('/produto')[0]}/produtos` },
+    ];
+    if (product.category) {
+      crumbs.push({
+        position: 3,
+        name: product.category.name,
+        item: `${pageUrl.split('/produto')[0]}/categoria/${product.category.slug}`,
+      });
+    }
+    crumbs.push({ position: crumbs.length + 1, name: product.name, item: pageUrl });
+    const crumbsJson = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: crumbs.map((c) => ({
+        '@type': 'ListItem',
+        position: c.position,
+        name: c.name,
+        item: c.item,
+      })),
+    });
+
     res.render('shop/product', {
       title: product.seoTitle || product.name,
       product,
       related,
+      ldJson: JSON.stringify(ld),
+      crumbsJson,
     });
   } catch (err) {
     next(err);

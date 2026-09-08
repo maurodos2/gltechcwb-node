@@ -225,7 +225,10 @@ app.use('/admin/whatsapp', requireAdminAuth, require('./routes/admin/whatsapp'))
 
 // ---- 404 ----
 app.use((req, res) => {
-  res.status(404).send('Página não encontrada.');
+  res.status(404).render('shop/404', {
+    title: 'Página não encontrada',
+    navActive: '',
+  });
 });
 
 // ---- Erros não tratados ----

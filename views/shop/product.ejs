@@ -1,5 +1,8 @@
 <%- include('../partials/site-head', { title: product.seoTitle || product.name, navActive: 'product', metaDescription: product.seoDescription || product.shortDescription }) %>
 
+<script type="application/ld+json"><%- ldJson %></script>
+<script type="application/ld+json"><%- crumbsJson %></script>
+
 <nav class="breadcrumb container" aria-label="Você está aqui">
   <a href="/">Início</a>
   <span class="sep">/</span>
