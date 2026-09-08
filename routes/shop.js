@@ -5,6 +5,19 @@ const Category = require('../models/Category');
 
 const PER_PAGE = 12;
 
+// Redirecionamentos 301 de URLs do site antigo (removido) para as páginas atuais.
+const LEGACY_REDIRECTS = [
+  { from: '/index.html', to: '/' },
+  { from: '/home', to: '/' },
+  { from: '/loja', to: '/produtos' },
+];
+LEGACY_REDIRECTS.forEach(({ from, to }) => {
+  router.get(from, (req, res) => res.redirect(301, to));
+});
+// /Sobre-Nós (e variantes sem acento/maísculas) — regex casa também a forma
+// percent-encodada que o Google envia (Express compara o path em bruto).
+router.get(/^\/Sobre-N/i, (req, res) => res.redirect(301, '/'));
+
 const SORTS = {
   recentes: { createdAt: -1 },
   'nome-asc': { name: 1 },
