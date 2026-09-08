@@ -66,6 +66,17 @@ app.use(express.json({ limit: '100kb' }));
 app.use(methodOverride('_method')); // permite PUT/DELETE via ?_method= em forms HTML
 app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index: false }));
 
+// Normalização de URL para SEO: 301 de variantes com barra final para a forma
+// canônica (sem barra), preservando a query. Evita "Cópia, canônica diferente"
+// no Google (ex.: /categoria/x/ vs /categoria/x).
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  if (req.path.startsWith('/admin') || req.path.startsWith('/api')) return next();
+  if (req.path === '/' || !req.path.endsWith('/')) return next();
+  const suffix = req.originalUrl.substring(req.path.length); // query preservada
+  res.redirect(301, req.path.slice(0, -1) + suffix);
+});
+
 // Verificação de origem (CSRF em camadas): compara o Origin com o domínio do app
 // (SITE_URL) e com o Host. Webhooks do Mercado Pago ficam de fora.
 // IMPORTANTE: por padrão NÃO bloqueia (apena registra) enquanto investigamos um
