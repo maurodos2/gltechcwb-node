@@ -1,0 +1,26 @@
+# Caddyfile da GLTechCWB — proxy reverso com HTTPS automático (Let's Encrypt).
+# Usado pelo deploy/oracle-provision.sh (placeholder __DOMAIN__).
+# Serve apex + www e faz 301 canônico de apex -> www (sem intermediários de
+# borda como Cloudflare — DNS aponta direto para a VM).
+
+__DOMAIN__, www.__DOMAIN__ {
+	encode gzip zstd
+
+	@apex host __DOMAIN__
+	redir @apex https://www.__DOMAIN__{uri} permanent
+
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-Proto https
+	}
+
+	# Estáticos com cache (uploads antigos que ainda podem estar em /public)
+	@static path /css/* /js/* /img/* /uploads/* /favicon.ico
+	header @static Cache-Control "public, max-age=604800"
+
+	log {
+		output file /var/log/caddy/gltechcwb.log {
+			roll_size 10MB
+			roll_keep 5
+		}
+	}
+}
