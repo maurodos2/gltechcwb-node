@@ -29,6 +29,8 @@ router.post('/add', async (req, res) => {
     let itemName = product.name;
     let itemSku = product.sku;
     let variantKey = null;
+    // Sob encomenda: sem estoque físico, permite pedir qualquer quantidade.
+    const onDemand = !!product.onDemand;
 
     if (variantId && product.hasVariants) {
       const variant = product.variants.id(variantId);
@@ -51,13 +53,13 @@ router.post('/add', async (req, res) => {
 
     if (existing) {
       const newQty = existing.quantity + qty;
-      if (newQty > stockAvailable) {
+      if (!onDemand && newQty > stockAvailable) {
         return res.status(400).json({ error: 'Estoque insuficiente. Disponível: ' + stockAvailable });
       }
       existing.quantity = newQty;
       existing.unitPrice = unitPrice;
     } else {
-      if (qty > stockAvailable) {
+      if (!onDemand && qty > stockAvailable) {
         return res.status(400).json({ error: 'Estoque insuficiente. Disponível: ' + stockAvailable });
       }
       cart.items.push({
@@ -67,6 +69,7 @@ router.post('/add', async (req, res) => {
         sku: itemSku,
         unitPrice,
         quantity: qty,
+        onDemand,
         image: product.images && product.images.length ? product.images[0] : null,
       });
     }

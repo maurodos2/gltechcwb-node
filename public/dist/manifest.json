@@ -1,0 +1,10 @@
+{
+  "js": [
+    "dist/site.min.js",
+    "dist/cart.min.js"
+  ],
+  "css": [
+    "dist/site.min.css",
+    "dist/admin.min.css"
+  ]
+}

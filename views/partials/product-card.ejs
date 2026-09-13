@@ -1,11 +1,12 @@
 <%
   const cardEff = effectivePrice(p);
   const hasPromo = !p.hasVariants && p.promoPrice && p.promoPrice > 0;
-  const outOfStock = !p.hasVariants && p.stock <= 0;
+  const outOfStock = !p.onDemand && !p.hasVariants && p.stock <= 0;
 %>
 <article class="product-card">
   <div class="product-card__media">
     <div class="badges">
+      <% if (p.onDemand) { %><span class="badge badge--ondemand">Sob encomenda</span><% } %>
       <% if (hasPromo) { %><span class="badge badge--promo">Promoção</span><% } %>
       <% if (outOfStock) { %><span class="badge badge--out">Esgotado</span><% } %>
     </div>

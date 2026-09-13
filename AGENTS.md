@@ -9,6 +9,7 @@ E-commerce `gltechcwb` — Express + MongoDB (Mongoose) + EJS. Storefront pt-BR:
 - `npm run import-catalog -- migracao/categorias.json migracao/produtos.json` — upsert idempotente de catálogo por `slug` (categoria) e `sku` (produto). Hardcoda `type: 'produto'`.
 - `npm run import-manufacturer -- SKU [SKU...]` — ferramenta manual: pesquisa o site oficial do fabricante, baixa imagens (para o R2) e descrição (só se vazia). Mesma engine do painel `/admin/imports`. Pode repetir sem duplicar.
 - `npm run remove-services` — apaga todos os `type: 'servico'` e a categoria "Serviços Técnicos". Rodar para limpar serviços.
+- `npm run build:assets` — minifica `public/js/*.js` e `public/css/*.css` (terser + clean-css) gerando `public/dist/*.min.*` + `manifest.json`. As views usam `asset('/css/site.css')` (helper em `server.js` app.locals) que troca para o `.min` quando `NODE_ENV=production`. Rodar após alterar JS/CSS do site público e incluir `public/dist/` no deploy.
 
 Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env` → `npm run seed` → `npm run import-catalog -- migracao/categorias.json migracao/produtos.json`.
 
@@ -23,6 +24,7 @@ Ordem típica de setup local: `npm install` → copiar `.env.example` para `.env
 - Tudo voltado ao usuário é **pt-BR**: views, mensagens de log, comentários, README. Manter.
 - Formulários HTML usam `method-override` via `?_method=PUT|DELETE` (configurado em `server.js`).
 - Helpers globais de view ficam em `app.locals` (em `server.js`): `formatPrice`, `effectivePrice`, `minVariantPrice`, `whatsappUrl`. Não redifinir nas views.
+- SEO em `lib/seo.js`: meta descriptions dinâmicas (120–150 chars; nome + preço + CTA "Compre em até 12x"), JSON-LD Product/BreadcrumbList nas PDPs e WebSite + ElectronicsStore + ItemList na home. Rotas em `routes/shop.js` passam `metaDescription`/`ldJson`/`crumbsJson`/`ldHomeJson`; `standardDescriptionHtml` monta o template padrão (Ficha Técnica, Para quem é, Benefícios, Garantia) quando a descrição do produto é curta. Regenerar metas/JSON-LD é automático da renderização — não precisa de job.
 - O middleware que carrega `navCategories` pula paths `/admin` e `/api`.
 - Webhooks do Mercado Pago validam assinatura HMAC (`x-signature`) via SDK oficial; `WEBHOOK_SECRET` deve ser o **secret gerado no painel MP** (Suas integrações > Webhooks), não um valor inventado.
 

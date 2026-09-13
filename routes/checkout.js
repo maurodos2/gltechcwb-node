@@ -4,6 +4,21 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const { requireCustomerAuth } = require('../middleware/auth');
 
+// Verifica disponibilidade de estoque para um item do carrinho. Itens sob
+// encomenda (dropshipping, onDemand) não têm estoque físico — pulam a checagem.
+async function validateItemStock(item) {
+  const product = await Product.findById(item.productId);
+  if (!product) return { error: 'produto_nao_encontrado' };
+  if (product.onDemand) return { ok: true };
+  if (item.variantId) {
+    const variant = product.variants.id(item.variantId);
+    if (!variant || variant.stock < item.quantity) return { error: 'estoque_insuficiente' };
+  } else if (product.stock < item.quantity) {
+    return { error: 'estoque_insuficiente' };
+  }
+  return { ok: true };
+}
+
 // GET /checkout — página de checkout
 router.get('/', requireCustomerAuth, async (req, res) => {
   const cart = req.session.cart;
@@ -132,20 +147,9 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
 
     // Validar estoque antes de criar o pedido
     for (const item of cart.items) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        return res.redirect('/carrinho?error=produto_nao_encontrado');
-      }
-
-      if (item.variantId) {
-        const variant = product.variants.id(item.variantId);
-        if (!variant || variant.stock < item.quantity) {
-          return res.redirect('/carrinho?error=estoque_insuficiente');
-        }
-      } else {
-        if (product.stock < item.quantity) {
-          return res.redirect('/carrinho?error=estoque_insuficiente');
-        }
+      const result = await validateItemStock(item);
+      if (result.error) {
+        return res.redirect(`/carrinho?error=${result.error}`);
       }
     }
 
@@ -162,12 +166,16 @@ router.post('/pay', requireCustomerAuth, async (req, res) => {
       },
       fulfillment: isPickup ? 'pickup' : 'delivery',
       shippingAddress,
-      items: cart.items.map((item) => ({
-        product: item.productId,
-        variantId: item.variantId || null,
-        name: item.name,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
+      items: await Promise.all(cart.items.map(async (item) => {
+        const product = await Product.findById(item.productId);
+        return {
+          product: item.productId,
+          variantId: item.variantId || null,
+          name: item.name,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          onDemand: !!(product && product.onDemand),
+        };
       })),
       itemsTotal,
       shippingCost,
@@ -305,12 +313,16 @@ router.post('/pix', requireCustomerAuth, async (req, res) => {
         phone: customer.phone,
       },
       shippingAddress,
-      items: cart.items.map((item) => ({
-        product: item.productId,
-        variantId: item.variantId || null,
-        name: item.name,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
+      items: await Promise.all(cart.items.map(async (item) => {
+        const product = await Product.findById(item.productId);
+        return {
+          product: item.productId,
+          variantId: item.variantId || null,
+          name: item.name,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          onDemand: !!(product && product.onDemand),
+        };
       })),
       itemsTotal,
       shippingCost,
@@ -403,16 +415,8 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
 
     // Validar estoque antes de criar o pedido
     for (const item of cart.items) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        return res.json({ success: false, message: 'Produto não encontrado.' });
-      }
-      if (item.variantId) {
-        const variant = product.variants.id(item.variantId);
-        if (!variant || variant.stock < item.quantity) {
-          return res.json({ success: false, message: 'Estoque insuficiente.' });
-        }
-      } else if (product.stock < item.quantity) {
+      const result = await validateItemStock(item);
+      if (result.error) {
         return res.json({ success: false, message: 'Estoque insuficiente.' });
       }
     }
@@ -440,12 +444,16 @@ router.post('/pay-card', requireCustomerAuth, async (req, res) => {
         phone: customer.phone,
       },
       shippingAddress,
-      items: cart.items.map((item) => ({
-        product: item.productId,
-        variantId: item.variantId || null,
-        name: item.name,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
+      items: await Promise.all(cart.items.map(async (item) => {
+        const product = await Product.findById(item.productId);
+        return {
+          product: item.productId,
+          variantId: item.variantId || null,
+          name: item.name,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          onDemand: !!(product && product.onDemand),
+        };
       })),
       itemsTotal,
       shippingCost,

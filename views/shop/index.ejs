@@ -1,5 +1,9 @@
 <%- include('../partials/site-head', { title: '', navActive: 'home' }) %>
 
+<% if (typeof ldHomeJson !== 'undefined' && ldHomeJson) { %>
+<script type="application/ld+json"><%- ldHomeJson %></script>
+<% } %>
+
 <section class="hero">
   <div class="container hero__inner">
     <span class="hero__badge"><span class="dot"></span> Loja de informática · Curitiba</span>

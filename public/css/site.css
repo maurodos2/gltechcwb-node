@@ -569,6 +569,12 @@ img {
   border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
+.badge--ondemand {
+  background: rgba(12, 74, 110, 0.9);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
 .badge--service {
   background: rgba(20, 83, 45, 0.85);
   color: var(--green-300);

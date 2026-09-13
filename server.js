@@ -46,6 +46,21 @@ app.locals.safeJson = (data) => JSON.stringify(data)
   .replace(/>/g, '\\u003e')
   .replace(/&/g, '\\u0026');
 
+// SEO: meta descriptions dinâmicas, JSON-LD e template padrão de descrição
+const seo = require('./lib/seo');
+app.locals.seo = seo;
+app.locals.productMetaDescription = seo.productMetaDescription;
+app.locals.standardDescriptionHtml = seo.standardDescriptionHtml;
+
+// Assets minificados em produção (gerados por `npm run build:assets`).
+// Em desenvolvimento serve os arquivos originais (sem .min) p/ facilitar debug.
+app.locals.asset = (relPath) => {
+  if (!isProd) return relPath;
+  return `/dist/${path.basename(relPath).replace(/\.(js|css)$/, '.min.$1')}`;
+};
+
+app.locals.isProd = () => isProd;
+
 // ---- Middlewares base ----
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

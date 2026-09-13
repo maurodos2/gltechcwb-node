@@ -7,6 +7,9 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true }, // snapshot do nome no momento da compra
     unitPrice: { type: Number, required: true },
     quantity: { type: Number, required: true, min: 1 },
+    // Snapshot de sob encomenda/dropshipping no momento da compra — usado
+    // para não dar baixa em estoque físico (item não tem estoque local).
+    onDemand: { type: Boolean, default: false },
   },
   { _id: false }
 );

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const seo = require('../lib/seo');
 
 const PER_PAGE = 12;
 
@@ -42,6 +43,18 @@ router.get('/', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(remaining);
 
+    const siteUrl = `${req.protocol}://${req.get('host')}`;
+    const { effectivePrice, minVariantPrice, formatPrice } = req.app.locals;
+    const withPrice = (p) => {
+      const price = p.hasVariants ? minVariantPrice(p) : effectivePrice(p);
+      const inStock = p.onDemand
+        ? true
+        : !p.hasVariants
+          ? p.stock > 0
+          : p.variants.some((v) => v.stock > 0);
+      return { ...p.toObject ? p.toObject() : p, __price: price, __inStock: inStock, __priceFormatted: price != null ? formatPrice(price) : null };
+    };
+
     res.render('shop/index', {
       title: '',
       categories,
@@ -49,6 +62,14 @@ router.get('/', async (req, res, next) => {
       latest: newest,
       productCount,
       categoryCount: categories.length,
+      metaDescription: 'Loja de informática em Curitiba. Hardware, periféricos, componentes e acessórios com preço justo, garantia e envio para todo o Brasil. Compre em até 12x.',
+      ldHomeJson: JSON.stringify(seo.homeJsonLd({
+        siteUrl,
+        phone: res.locals.contactWhatsapp || process.env.CONTACT_WHATSAPP || '',
+        email: process.env.CONTACT_EMAIL || '',
+        featured: featured.map(withPrice),
+        latest: newest.map(withPrice),
+      })),
     });
   } catch (err) {
     next(err);
@@ -132,31 +153,20 @@ router.get('/produto/:slug', async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(4);
 
-    const { effectivePrice, minVariantPrice } = req.app.locals;
+    const { effectivePrice, minVariantPrice, formatPrice } = req.app.locals;
     const pageUrl = `${req.protocol}://${req.get('host')}${req.path}`;
-    const inStock = !product.hasVariants
-      ? product.stock > 0
-      : product.variants.some((v) => v.stock > 0);
+    const inStock = product.onDemand
+      ? true
+      : !product.hasVariants
+        ? product.stock > 0
+        : product.variants.some((v) => v.stock > 0);
     const price = product.hasVariants
       ? minVariantPrice(product)
       : effectivePrice(product);
 
-    const ld = {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: product.name,
-      description: product.shortDescription || product.seoDescription || product.name,
-      sku: product.sku,
-      offers: {
-        '@type': 'Offer',
-        url: pageUrl,
-        priceCurrency: 'BRL',
-        price,
-        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      },
-    };
-    if (product.brand) ld.brand = { '@type': 'Brand', name: product.brand };
-    if (product.images && product.images.length) ld.image = product.images[0];
+    const ldJson = JSON.stringify(
+      seo.productJsonLd(product, { price, pageUrl, inStock })
+    );
 
     const crumbs = [
       { position: 1, name: 'Início', item: pageUrl.split('/produto')[0] + '/' },
@@ -170,22 +180,20 @@ router.get('/produto/:slug', async (req, res, next) => {
       });
     }
     crumbs.push({ position: crumbs.length + 1, name: product.name, item: pageUrl });
-    const crumbsJson = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: crumbs.map((c) => ({
-        '@type': 'ListItem',
-        position: c.position,
-        name: c.name,
-        item: c.item,
-      })),
-    });
+    const crumbsJson = JSON.stringify(seo.breadcrumbJsonLd(crumbs));
+
+    const metaDescription =
+      product.seoDescription ||
+      product.shortDescription ||
+      seo.productMetaDescription(product, { price, formatPrice });
 
     res.render('shop/product', {
       title: product.seoTitle || product.name,
+      canonicalUrl: pageUrl,
+      metaDescription,
       product,
       related,
-      ldJson: JSON.stringify(ld),
+      ldJson,
       crumbsJson,
     });
   } catch (err) {
@@ -247,9 +255,18 @@ async function renderCatalog(req, res, categorySlug) {
 
   const baseUrl = currentCategory ? `/categoria/${currentCategory.slug}` : '/produtos';
 
+  const metaDescription = (pageDescription && pageDescription.length >= 60)
+    ? pageDescription
+    : seo.catalogMetaDescription({
+        categoryName: currentCategory ? currentCategory.name : '',
+        total,
+        q,
+      });
+
   res.render('shop/catalog', {
     title: pageTitle,
-    metaDescription: pageDescription || undefined,
+    canonicalUrl: `${req.protocol}://${req.get('host')}${baseUrl}${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+    metaDescription,
     navActive: 'catalog',
     searchValue: q,
     categories: res.locals.navCategories || [],

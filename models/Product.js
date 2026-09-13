@@ -60,6 +60,13 @@ const productSchema = new mongoose.Schema(
       default: 'produto',
     },
 
+    // Sob encomenda (dropshipping): vende sem estoque físico — o pedido é
+    // repassado ao fornecedor. Libera o checkout mesmo com stock = 0.
+    onDemand: {
+      type: Boolean,
+      default: false,
+    },
+
     // Custo de aquisição, usado internamente para calcular margem — não
     // exibido na vitrine pública.
     cost: {
