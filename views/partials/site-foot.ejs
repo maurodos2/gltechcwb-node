@@ -37,11 +37,21 @@
         <div class="footer-col">
           <h4>Atendimento</h4>
           <ul>
+            <% if (typeof contactPhone !== 'undefined' && contactPhone) { %>
+              <li>Tel: <a href="tel:<%= contactPhone %>"><%= contactPhone %></a></li>
+            <% } %>
             <% if (typeof contactWhatsapp !== 'undefined' && contactWhatsapp) { %>
               <li><a href="<%= whatsappUrl(contactWhatsapp, 'Olá! Vim pelo site da GLTechCWB.') %>" target="_blank" rel="noopener">WhatsApp</a></li>
             <% } %>
             <% if (typeof contactEmail !== 'undefined' && contactEmail) { %>
               <li><a href="mailto:<%= contactEmail %>"><%= contactEmail %></a></li>
+            <% } %>
+            <% if (typeof storeLocal !== 'undefined' && storeLocal) { %>
+              <li>
+                <%= storeLocal.street %><br>
+                <%= storeLocal.neighborhood %> · <%= storeLocal.city %>/<%= storeLocal.state %> · CEP <span class="no-wrap"><%= storeLocal.postalCode %></span><br>
+                Horário: <span class="no-wrap"><%= storeLocal.openingHours.replace('Mo-Fr','seg–sex').replace('Sa-Su','sáb–dom') %></span>
+              </li>
             <% } %>
             <% if (!(typeof contactWhatsapp !== 'undefined' && contactWhatsapp) && !(typeof contactEmail !== 'undefined' && contactEmail)) { %>
               <li><span class="text-muted">Contato em breve</span></li>

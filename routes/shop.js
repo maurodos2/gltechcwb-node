@@ -65,8 +65,9 @@ router.get('/', async (req, res, next) => {
       metaDescription: 'Loja de informática em Curitiba. Hardware, periféricos, componentes e acessórios com preço justo, garantia e envio para todo o Brasil. Compre em até 12x.',
       ldHomeJson: JSON.stringify(seo.homeJsonLd({
         siteUrl,
-        phone: res.locals.contactWhatsapp || process.env.CONTACT_WHATSAPP || '',
+        phone: res.locals.contactPhone || process.env.CONTACT_PHONE || '',
         email: process.env.CONTACT_EMAIL || '',
+        storeLocal: res.locals.storeLocal,
         featured: featured.map(withPrice),
         latest: newest.map(withPrice),
       })),

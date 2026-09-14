@@ -238,6 +238,20 @@ app.use(async (req, res, next) => {
   }
   res.locals.contactWhatsapp = process.env.CONTACT_WHATSAPP || '';
   res.locals.contactEmail = process.env.CONTACT_EMAIL || '';
+  // Dados de contato/endereço da loja física (SEO local / JSON-LD LocalBusiness).
+  // Sobrescrever com env vars se desejar; defaults = dados reais da loja.
+  res.locals.contactPhone = process.env.CONTACT_PHONE || '+554130301240';
+  res.locals.storeLocal = {
+    street: process.env.STORE_ADDRESS_STREET || 'Rua Acyr Guimarães, 195 - Apto 171',
+    neighborhood: process.env.STORE_ADDRESS_NEIGHBORHOOD || 'Água Verde',
+    city: process.env.STORE_ADDRESS_CITY || 'Curitiba',
+    state: process.env.STORE_ADDRESS_STATE || 'PR',
+    postalCode: process.env.STORE_ADDRESS_POSTAL_CODE || '80240-230',
+    country: 'BR',
+    geoLat: process.env.STORE_ADDRESS_LAT || '-25.4476240',
+    geoLng: process.env.STORE_ADDRESS_LNG || '-49.2890019',
+    openingHours: process.env.STORE_OPENING_HOURS || 'Mo-Fr 08:00-18:00',
+  };
   next();
 });
 
