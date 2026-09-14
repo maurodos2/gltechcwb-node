@@ -1,0 +1,24 @@
+PARA: lojavirtual@mazer.com.br
+ASSUNTO: Consulta para integração de e-commerce — código de revenda
+
+Sou revendedor de produtos de informática em Curitiba e tenho e-commerce
+próprio (gltechcwb.com) com estoque próprio. Estou avaliando complementar
+o catálogo com o estoque da Mazer e gostaria de confirmar como a Mazer
+disponibiliza integração tecnológica.
+
+Gostaria de saber:
+
+1. Vocês possuem API ou WebService para consulta de catálogo — produto,
+   preço, estoque, fotos, e campos como code/GTIN e NCM — a fim de
+   alimentar o e-commerce próprio da revenda?
+2. Como funciona o acesso (token/credencial, ambiente de homologação,
+   documentação) e há custo?
+3. Para vendas ao cliente final, funciona o sistema de faturamento direto
+   (a Mazer emite e entrega, com comissão para a revenda)? Se sim, há
+   integração de pedidos por API ou o pedido é lançado manualmente?
+4. Prazo de entrega e política de frete a partir do CD de Curitiba.
+
+Meu CNPJ está cadastrado. Se preferirem, posso agendar um contato com a
+área de integrações.
+
+Agradeço desde já.

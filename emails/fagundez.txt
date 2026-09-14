@@ -1,0 +1,20 @@
+PARA: comercial@fagundez.com
+ASSUNTO: Consulta de integração para e-commerce de revenda — Pinhais
+
+Olá,
+
+Sou revendedor em Curitiba/PR com e-commerce próprio de tecnologia
+(gltechcwb.com). Vi que a Fagundez trabalha com estoque colaborativo e
+pronta-entrega e quero saber se existe forma de integrar esse estoque
+automaticamente ao nosso site.
+
+Perguntas:
+
+1. Há API ou WebService de catálogo (produto, preço, estoque, fotos,
+   código/GTIN, NCM) para uso do e-commerce da revenda?
+2. Se sim, como é o acesso (credencial/token, homologação, docs) e há custo?
+3. Vocês atendem o modelo de entrega direta ao cliente final da revenda
+   (faturamento direto/dropship)? Como é feito o lançamento do pedido?
+4. Prazo e frete para a região de Curitiba.
+
+Fico à disposição para uma conversa.

@@ -202,6 +202,40 @@ router.get('/produto/:slug', async (req, res, next) => {
   }
 });
 
+
+// GET /contato — NAP completo + mapa + horário (SEO local; mantém consistência
+// com o JSON-LD ElectronicsStore da home e com o Google Business Profile).
+router.get('/contato', (req, res) => {
+  const base = `${req.protocol}://${req.get('host')}`;
+  const local = res.locals.storeLocal || {};
+  const q = encodeURIComponent(
+    [local.street, local.neighborhood, local.city, local.state].filter(Boolean).join(', ')
+  );
+  const hasGeo = local.geoLat && local.geoLng;
+  const mapsUrl = hasGeo
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${local.geoLat},${local.geoLng}`)}&hl=pt-BR`
+    : `https://www.google.com/maps/search/?api=1&query=${q}&hl=pt-BR`;
+  const mapsEmbed = hasGeo
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(`${local.geoLat},${local.geoLng}`)}&z=16&output=embed&hl=pt-BR`
+    : `https://maps.google.com/maps?q=${q}&z=16&output=embed&hl=pt-BR`;
+
+  res.render('shop/contact', {
+    title: 'Contato',
+    metaDescription: seo.contactMetaDescription({
+      phone: res.locals.contactPhone || '',
+      email: process.env.CONTACT_EMAIL || '',
+    }),
+    contactJsonLd: JSON.stringify(seo.contactJsonLd({
+      siteUrl: `${base}/`,
+      phone: res.locals.contactPhone || '',
+      email: process.env.CONTACT_EMAIL || '',
+      storeLocal: local,
+    })),
+    mapsUrl,
+    mapsEmbed,
+  });
+});
+
 // GET /carrinho — página do carrinho
 router.get('/carrinho', (req, res) => {
   const cart = req.session.cart || { items: [] };
