@@ -79,7 +79,29 @@ app.use(
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 app.use(express.json({ limit: '100kb' }));
 app.use(methodOverride('_method')); // permite PUT/DELETE via ?_method= em forms HTML
-app.use(express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index: false }));
+app.use(
+  express.static(path.join(__dirname, 'public'), { dotfiles: 'deny', index: false })
+);
+
+// Remove parâmetros de tracking do Google/redes sociais da URL com 301 (SEO:
+// srsltid, gclid, fbclid, twclid, utm_* etc.). O servidor não os usa e eles
+// gerariam URL duplicada/ruído no Search Console. Mantém os params da loja
+// (q, ordem, page, _method).
+const TRACKING_PARAMS = /^(srsltid|gclid|gclsrc|dclid|fbclid|twclid|msclkid|igshid|utm_[a-z_]+)$/i;
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !req._parsedUrl || !req._parsedUrl.query) return next();
+  const clean = req._parsedUrl.query
+    .split('&')
+    .filter((pair) => {
+      const key = pair.split('=')[0];
+      return key && !TRACKING_PARAMS.test(key);
+    })
+    .join('&');
+  const original = req._parsedUrl.query;
+  if (clean === original) return next();
+  const qs = clean ? `?${clean}` : '';
+  res.redirect(301, req.path + qs);
+});
 
 // Normalização de URL para SEO: 301 de variantes com barra final para a forma
 // canônica (sem barra), preservando a query. Evita "Cópia, canônica diferente"
