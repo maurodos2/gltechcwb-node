@@ -119,7 +119,15 @@ app.use((req, res, next) => {
 // IMPORTANTE: por padrão NÃO bloqueia (apena registra) enquanto investigamos um
 // bloqueio falso de login do dono da loja; a defesa real de CSRF é o cookie
 // SameSite=Lax + HttpOnly. Reativar em BLOCK quando o caso estiver esclarecido.
-const BLOCK_CROSS_ORIGIN = false;
+// Proteção cross-origin (estratégia do AGENTS.md → Backlog):
+//  - BLOCK_CROSS_ORIGIN BLoqueia (403) requisições com Origin/Referer de outro
+//    domínio — mitigação de CSRF em requisições de navegação (GET/POST) onde
+//    `SameSite` não protege (ex.: navegadores legados, metodo-override via POST).
+//    Ficou false durante o período de observação pós-migração p/ OCI; reativado
+//    em true após 0 eventos em security_events (consulta via shell na VM em
+//    2026-09-15), conforme a regra do AGENTS.md (~1 semana sem eventos).
+//  - Antes de bloquear registra EM security_events (grava em NODE_ENV=production).
+const BLOCK_CROSS_ORIGIN = true;
 const appApex = (() => {
   try {
     return new URL(process.env.SITE_URL).hostname.toLowerCase().replace(/^www\./, '');
