@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const qrcode = require('qrcode');
 const service = require('../../lib/whatsapp/service');
+const Conversation = require('../../models/Conversation');
 
 // GET /admin/whatsapp — status do bot, QR (quando ainda não vinculado) e envio de teste
 router.get('/', async (req, res) => {
@@ -35,6 +36,20 @@ router.post('/start', async (req, res) => {
 router.post('/logout', async (req, res) => {
   await service.logout();
   res.redirect('/admin/whatsapp');
+});
+
+// POST /admin/whatsapp/reset — devolve todas as conversas em modo humano ao bot.
+// A opção 6 não volta sozinha para o menu; este é o caminho admin para reativar.
+router.post('/reset', async (req, res) => {
+  try {
+    const r = await Conversation.updateMany(
+      { status: 'human' },
+      { status: 'bot', context: null }
+    );
+    res.redirect(`/admin/whatsapp?msg=${encodeURIComponent(`Conversas voltando ao bot (${r.modifiedCount}).`)}`);
+  } catch (e) {
+    res.redirect('/admin/whatsapp?msg=' + encodeURIComponent('Falha ao resetar: ' + e.message));
+  }
 });
 
 // POST /admin/whatsapp/send — mensagem de teste
