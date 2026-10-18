@@ -1,7 +1,7 @@
 <%- include('../partials/site-head', { title: product.seoTitle || product.name, navActive: 'product', metaDescription: typeof metaDescription !== 'undefined' ? metaDescription : (product.seoDescription || product.shortDescription) }) %>
 
-<script type="application/ld+json"><%- ldJson %></script>
-<script type="application/ld+json"><%- crumbsJson %></script>
+<script type="application/ld+json"><%- safeLdJson(ldJson) %></script>
+<script type="application/ld+json"><%- safeLdJson(crumbsJson) %></script>
 
 <nav class="breadcrumb container" aria-label="Você está aqui">
   <a href="/">Início</a>

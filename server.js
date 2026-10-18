@@ -46,6 +46,11 @@ app.locals.safeJson = (data) => JSON.stringify(data)
   .replace(/>/g, '\\u003e')
   .replace(/&/g, '\\u0026');
 
+// Injeta JSON-LD com proteção extra contra quebra do tag <script>
+app.locals.safeLdJson = (jsonString) => String(jsonString || '')
+  .replace(/<\/script>/gi, '<\\/script>')
+  .replace(/<\!--/gi, '<\\!--');
+
 // SEO: meta descriptions dinâmicas, JSON-LD e template padrão de descrição
 const seo = require('./lib/seo');
 app.locals.seo = seo;

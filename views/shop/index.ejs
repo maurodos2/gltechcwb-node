@@ -1,7 +1,7 @@
 <%- include('../partials/site-head', { title: '', navActive: 'home' }) %>
 
 <% if (typeof ldHomeJson !== 'undefined' && ldHomeJson) { %>
-<script type="application/ld+json"><%- ldHomeJson %></script>
+<script type="application/ld+json"><%- safeLdJson(ldHomeJson) %></script>
 <% } %>
 
 <section class="hero">
