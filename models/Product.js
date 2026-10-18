@@ -81,6 +81,15 @@ const productSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: null,
+      validate: {
+        validator: function (v) {
+          // Aceita null, undefined ou vazio
+          if (!v || v === '') return true;
+          // Deve ser exatamente 13 dígitos numéricos (EAN-13)
+          return /^\d{13}$/.test(v);
+        },
+        message: 'Barcode deve ser um EAN-13 válido (13 dígitos numéricos)',
+      },
     },
 
     // Preço/estoque "base" — usados quando o produto NÃO tem variações
