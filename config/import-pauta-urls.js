@@ -20,6 +20,23 @@ const CATEGORIAS = {
   computador: 'computadores-e-dispositivos-portateis-sistemas-prontos',
   seguranca: 'seguranca-e-monitoramento',
   pilha: 'pilhas-e-baterias',
+  hardware: 'hardware-componentes-internos',
+  monitor: 'monitores',
+  projetor: 'projetores',
+  telefonia: 'telefonia-e-comunicacao',
+  rede: 'infraestrutura-e-redes',
+};
+const NOMES_CATEGORIAS = {
+  perifericos: 'Periféricos',
+  'armazenamento-e-memoria': 'Armazenamento e Memória',
+  'computadores-e-dispositivos-portateis-sistemas-prontos': 'Computadores e Dispositivos Portáteis (Sistemas Prontos)',
+  'seguranca-e-monitoramento': 'Segurança e Monitoramento',
+  'pilhas-e-baterias': 'Pilhas e Baterias',
+  'hardware-componentes-internos': 'Hardware / Componentes Internos',
+  monitores: 'Monitores',
+  projetores: 'Projetores',
+  'telefonia-e-comunicacao': 'Telefonia e Comunicação',
+  'infraestrutura-e-redes': 'Infraestrutura e Redes',
 };
 
 // Valores observados na tabela regional da Pauta. Quando PR estava indisponível,
@@ -50,6 +67,35 @@ const PRECOS = {
   '39263': { uf: 'PR', custo: 244.53 },
   '39264': { uf: 'PR', custo: 492.36 },
   '49074': { uf: 'SC', custo: 3620.27 },
+  '48224': { uf: 'PR', custo: 90.23 },
+  '50227': { uf: 'PR', custo: 2644.43 },
+  '49981': { uf: 'PR', custo: 211.47 },
+  '48225': { uf: 'SC', custo: 3789.28 },
+  '50935': { uf: 'PR', custo: 3337.26 },
+  '50192': { uf: 'PR', custo: 2513.45 },
+  '47010': { uf: 'PR', custo: 1076.95 },
+  '49859': { uf: 'PR', custo: 803.12 },
+  '49942': { uf: 'PR', custo: 677.22 },
+  '49935': { uf: 'PR', custo: 4318.38 },
+  '51211': { uf: 'SC', custo: 720.85 },
+  '39846': { uf: 'PR', custo: 560.10 },
+  '41274': { uf: 'PR', custo: 1696.54 },
+  '43266': { uf: 'PR', custo: 550.14 },
+  '45972': { uf: 'SC', custo: 367.87 },
+  '46254': { uf: 'SC', custo: 383.30 },
+  '46434': { uf: 'PR', custo: 460.01 },
+  '48754': { uf: 'PR', custo: 468.12 },
+  '50531': { uf: 'SC', custo: 478.95 },
+  '50908': { uf: 'SC', custo: 225.00 },
+  '50019': { uf: 'SC', custo: 269.00 },
+  '48623': { uf: 'SC', custo: 95.32 },
+  '48176': { uf: 'SC', custo: 149.00 },
+  '47816': { uf: 'SC', custo: 309.00 },
+  '48155': { uf: 'SC', custo: 229.00 },
+  '50520': { uf: 'SC', custo: 483.07 },
+  '50667': { uf: 'SC', custo: 649.00 },
+  '44187': { uf: 'SC', custo: 389.00 },
+  '44403': { uf: 'SC', custo: 1464.45 },
 };
 
 function normalizar(texto) {
@@ -68,11 +114,26 @@ function slugify(texto) {
 
 function categoriaPara(nome) {
   const texto = String(nome || '').toLowerCase();
-  if (/catraca|controle de acesso/.test(texto)) return CATEGORIAS.seguranca;
+  if (/hdd|disco r[ií]gido|\bssd\b|mem[oó]ria/.test(texto)) return CATEGORIAS.armazenamento;
+  if (/catraca|controle de acesso|c[aâ]mera|cftv/.test(texto)) return CATEGORIAS.seguranca;
   if (/pilha|bateria/.test(texto)) return CATEGORIAS.pilha;
-  if (/notebook/.test(texto)) return CATEGORIAS.computador;
-  if (/ssd/.test(texto)) return CATEGORIAS.armazenamento;
+  if (/monitor/.test(texto)) return CATEGORIAS.monitor;
+  if (/projetor/.test(texto)) return CATEGORIAS.projetor;
+  if (/smartphone|celular|telefone/.test(texto)) return CATEGORIAS.telefonia;
+  if (/access point|ponto de acesso|\bpoe\b|\bwi-?fi\b/.test(texto)) return CATEGORIAS.rede;
+  if (/placa\s*(?:de\s*)?(?:video|m[aã]e)/.test(texto)) return CATEGORIAS.hardware;
+  if (/notebook|\bpc\b|computador|desktop/.test(texto)) return CATEGORIAS.computador;
   return CATEGORIAS.periferico;
+}
+
+function normalizarSpecs(specs) {
+  const resultado = {};
+  for (const [chave, valor] of Object.entries(specs || {})) {
+    const chaveNormalizada = String(chave).replace(/\./g, '_').replace(/^\$/, '_');
+    if (['prototype', 'constructor', '__proto__'].includes(chaveNormalizada)) continue;
+    resultado[chaveNormalizada] = String(valor);
+  }
+  return resultado;
 }
 
 function extrairProduto(url, html) {
@@ -125,8 +186,10 @@ function extrairProduto(url, html) {
   };
 }
 
-async function carregarProdutos() {
-  const urls = fs.readFileSync(URLS_PATH, 'utf8').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+async function carregarProdutos(urlsInformadas = []) {
+  const urls = urlsInformadas.length
+    ? urlsInformadas
+    : fs.readFileSync(URLS_PATH, 'utf8').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
   const vistos = new Set();
   const produtos = [];
 
@@ -149,18 +212,17 @@ function encontrarExistente(produto, existentes) {
     if (porEan) return porEan;
   }
 
-  const identificadores = [produto.partNumber, produto.modelo]
-    .map(normalizar)
-    .filter((x) => x.length >= 4);
+  const identificador = normalizar(produto.partNumber || produto.modelo);
+  if (identificador.length < 4) return null;
+  const skuImportado = normalizar(`PAU-${slugify(produto.partNumber || produto.modelo).toUpperCase()}`);
 
   return existentes.find((x) => {
     const campos = [
-      x.name,
       x.sku,
       x.manufacturerRef && x.manufacturerRef.model,
       x.barcode,
     ].map(normalizar).filter(Boolean);
-    return identificadores.some((id) => campos.some((campo) => campo.includes(id)));
+    return campos.includes(identificador) || campos.includes(skuImportado);
   });
 }
 
@@ -184,7 +246,9 @@ async function validarBanco(produtos) {
     const categorias = await Category.find({ slug: { $in: slugs } }).lean();
     const categoriaPorSlug = new Map(categorias.map((x) => [x.slug, x]));
     const faltantes = slugs.filter((slug) => !categoriaPorSlug.has(slug));
-    if (faltantes.length) throw new Error(`Categorias ausentes: ${faltantes.join(', ')}`);
+    const semNome = faltantes.filter((slug) => !NOMES_CATEGORIAS[slug]);
+    if (semNome.length) throw new Error(`Nome não mapeado para categorias: ${semNome.join(', ')}`);
+    if (faltantes.length) console.log(`Categorias que serão criadas na execução: ${faltantes.join(', ')}`);
 
     const existentes = await Product.find({ type: 'produto' }).lean();
     const matches = produtos.map((p) => ({ produto: p, existente: encontrarExistente(p, existentes) }));
@@ -211,10 +275,16 @@ async function validarBanco(produtos) {
 
 async function executar(produtos) {
   await connectDB();
-  const categorias = await Category.find({ slug: { $in: [...new Set(produtos.map((p) => p.categoriaSlug))] } }).lean();
-  const categoriaPorSlug = new Map(categorias.map((x) => [x.slug, x]));
-  for (const p of produtos) {
-    if (!categoriaPorSlug.has(p.categoriaSlug)) throw new Error(`Categoria não encontrada: ${p.categoriaSlug}`);
+  const categoriaPorSlug = new Map();
+  for (const slug of new Set(produtos.map((p) => p.categoriaSlug))) {
+    const nome = NOMES_CATEGORIAS[slug];
+    if (!nome) throw new Error(`Nome não mapeado para a categoria: ${slug}`);
+    const categoria = await Category.findOneAndUpdate(
+      { slug },
+      { $setOnInsert: { name: nome, slug, active: true } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).lean();
+    categoriaPorSlug.set(slug, categoria);
   }
 
   const existentes = await Product.find({ type: 'produto' });
@@ -277,7 +347,7 @@ async function executar(produtos) {
       description: descricao,
       shortDescription: descricao.slice(0, 280),
       images: imagens,
-      specs: p.specs,
+      specs: normalizarSpecs(p.specs),
       manufacturerRef: { model: p.partNumber, url: p.url, importedAt: new Date() },
       active: true,
     };
@@ -296,12 +366,15 @@ async function executar(produtos) {
 }
 
 async function main() {
-  const executarAgora = process.argv.includes('--execute');
-  if (executarAgora === process.argv.includes('--dry-run')) {
+  const args = process.argv.slice(2);
+  const executarAgora = args.includes('--execute');
+  const modoPrevia = args.includes('--dry-run');
+  if (executarAgora === modoPrevia) {
     throw new Error('Use exatamente um modo: --dry-run ou --execute.');
   }
 
-  const produtos = await carregarProdutos();
+  const urls = args.filter((arg) => !arg.startsWith('--'));
+  const produtos = await carregarProdutos(urls);
   console.log(`Produtos lidos: ${produtos.length}`);
   for (const p of produtos) {
     console.log(`${p.codigoPauta}\t${p.marca}\t${p.partNumber}\t${p.ufCusto} custo=${p.custo.toFixed(2)} venda=${p.precoVenda.toFixed(2)}\t${p.categoriaSlug}\t${p.imagem ? 'imagem ok' : 'sem imagem'}\t${p.nome}`);
