@@ -21,6 +21,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+// Registra modelos antes de usar mongoose.model()
+require('../models/Product');
+
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {

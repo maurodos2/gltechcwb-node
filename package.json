@@ -10,6 +10,7 @@
     "import-catalog": "node config/import-catalog.js",
     "import-manufacturer": "node config/import-manufacturer.js",
     "import-agis": "node config/import-agis.js",
+    "import-dicomp": "node config/import-dicomp.js",
     "remove-services": "node config/remove-services.js",
     "build:assets": "node config/build-assets.js"
   },

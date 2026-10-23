@@ -25,6 +25,7 @@ const CATEGORIAS = {
   projetor: 'projetores',
   telefonia: 'telefonia-e-comunicacao',
   rede: 'infraestrutura-e-redes',
+  energia: 'nobreaks-e-energia',
 };
 const NOMES_CATEGORIAS = {
   perifericos: 'Periféricos',
@@ -37,6 +38,7 @@ const NOMES_CATEGORIAS = {
   projetores: 'Projetores',
   'telefonia-e-comunicacao': 'Telefonia e Comunicação',
   'infraestrutura-e-redes': 'Infraestrutura e Redes',
+  'nobreaks-e-energia': 'Nobreaks e Energia',
 };
 
 // Valores observados na tabela regional da Pauta. Quando PR estava indisponível,
@@ -96,6 +98,28 @@ const PRECOS = {
   '50667': { uf: 'SC', custo: 649.00 },
   '44187': { uf: 'SC', custo: 389.00 },
   '44403': { uf: 'SC', custo: 1464.45 },
+  '44199': { uf: 'PR', custo: 843.17 },
+  '49851': { uf: 'PR', custo: 336.96 },
+  '41547': { uf: 'PR', custo: 717.14 },
+  '34248': { uf: 'PR', custo: 669.89 },
+  '44197': { uf: 'PR', custo: 526.20 },
+  '50952': { uf: 'SC', custo: 525.12 },
+  '50942': { uf: 'SC', custo: 275.66 },
+  '43962': { uf: 'PR', custo: 660.66 },
+  '43734': { uf: 'PR', custo: 1221.34 },
+  '43731': { uf: 'PR', custo: 799.22 },
+  '43327': { uf: 'SC', custo: 5.65 },
+  '43328': { uf: 'SC', custo: 8.98 },
+  '43326': { uf: 'SC', custo: 26.53 },
+  '43325': { uf: 'SC', custo: 4.11 },
+  '36783': { uf: 'SC', custo: 16.00 },
+  '50596': { uf: 'SC', custo: 8.37 },
+  '50597': { uf: 'SC', custo: 8.05 },
+  '50554': { uf: 'PR', custo: 13.93 },
+  '50557': { uf: 'PR', custo: 12.15 },
+  '50558': { uf: 'PR', custo: 12.14 },
+  '46863': { uf: 'SC', custo: 87.14 },
+  '50940': { uf: 'SC', custo: 6.78 },
 };
 
 function normalizar(texto) {
@@ -114,6 +138,7 @@ function slugify(texto) {
 
 function categoriaPara(nome) {
   const texto = String(nome || '').toLowerCase();
+  if (/nobreak|no-break|ups/.test(texto)) return CATEGORIAS.energia;
   if (/hdd|disco r[ií]gido|\bssd\b|mem[oó]ria/.test(texto)) return CATEGORIAS.armazenamento;
   if (/catraca|controle de acesso|c[aâ]mera|cftv/.test(texto)) return CATEGORIAS.seguranca;
   if (/pilha|bateria/.test(texto)) return CATEGORIAS.pilha;
@@ -123,6 +148,7 @@ function categoriaPara(nome) {
   if (/access point|ponto de acesso|\bpoe\b|\bwi-?fi\b/.test(texto)) return CATEGORIAS.rede;
   if (/placa\s*(?:de\s*)?(?:video|m[aã]e)/.test(texto)) return CATEGORIAS.hardware;
   if (/notebook|\bpc\b|computador|desktop/.test(texto)) return CATEGORIAS.computador;
+  if (/fita|organizador de velcro/.test(texto)) return CATEGORIAS.rede;
   return CATEGORIAS.periferico;
 }
 

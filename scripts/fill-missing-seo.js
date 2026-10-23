@@ -26,6 +26,10 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
+// Registra modelos antes de usar mongoose.model() e .populate()
+require('../models/Product');
+require('../models/Category');
+
 const MONGO_URI = process.env.MONGO_URI;
 const DRY_RUN = process.env.DRY_RUN === 'true';
 const LIMIT = parseInt(process.env.LIMIT, 10) || 100;

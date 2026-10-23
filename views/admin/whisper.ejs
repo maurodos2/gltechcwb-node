@@ -1,0 +1,92 @@
+<%- include('../partials/admin-head', { title: 'Transcrição de Áudio/Vídeo (Whisper)' }) %>
+
+<div class="page-header">
+  <h1>Transcrição de Áudio/Vídeo</h1>
+  <p>Powered by <a href="https://github.com/openai/whisper" target="_blank" rel="noopener">OpenAI Whisper</a> (via Docker).</p>
+</div>
+
+<% if (msg) { %>
+  <div class="alert alert--success"><%= msg %></div>
+<% } %>
+<% if (erro) { %>
+  <div class="alert alert--error"><%= erro %></div>
+<% } %>
+
+<div class="card">
+  <h2>Status do Whisper</h2>
+  <ul style="list-style:none;padding:0">
+    <li><strong>Docker:</strong> <%= dockerOk ? '✅ Disponível' : '❌ Não disponível' %></li>
+    <li><strong>Imagem:</strong> <%= imagemOk ? '✅ openai/whisper:latest' : '❌ Não encontrada (rode <code>docker pull openai/whisper:latest</code>)' %></li>
+    <li><strong>Pasta de mídia:</strong> <code><%= mediaDir %></code></li>
+  </ul>
+</div>
+
+<div style="margin-top:24px" class="card">
+  <h2>Transcrever arquivo</h2>
+  <% if (!dockerOk || !imagemOk) { %>
+    <p style="color:#b00020">Corrija os itens acima antes de transcrever.</p>
+  <% } else { %>
+    <form method="POST" action="/admin/whisper/transcrever" class="import-form">
+      <label>Arquivo</label>
+      <select name="arquivo" class="import-form__input" required style="width:100%;max-width:420px;margin-bottom:12px">
+        <% if (arquivos.length === 0) { %>
+          <option value="">Nenhum arquivo de mídia encontrado em <%= mediaDir %></option>
+        <% } else { %>
+          <% arquivos.forEach((a) => { %>
+            <option value="<%= a.nome %>"><%= a.nome %> (<%= a.tamanho %>)</option>
+          <% }) %>
+        <% } %>
+      </select>
+
+      <label>Modelo</label>
+      <select name="model" class="import-form__input" style="width:100%;max-width:200px;margin-bottom:12px">
+        <% modelos.forEach((m) => { %>
+          <option value="<%= m %>" <%= m === 'base' ? 'selected' : '' %>><%= m %></option>
+        <% }) %>
+        <small style="display:block;color:#888;font-size:0.9em">tiny (rápido, menos preciso) → large-v3 (lento, mais preciso)</small>
+      </label>
+
+      <label>Idioma</label>
+      <input type="text" name="language" value="pt" class="import-form__input" style="width:100%;max-width:200px;margin-bottom:12px" placeholder="pt" />
+      <small style="display:block;color:#888;font-size:0.9em">Código do idioma (pt = português, en = inglês, etc.)</small>
+
+      <label>Formato de saída</label>
+      <select name="outputFormat" class="import-form__input" style="width:100%;max-width:200px;margin-bottom:16px">
+        <option value="txt">txt (texto simples)</option>
+        <option value="srt">srt (legenda)</option>
+        <option value="vtt">vtt (legenda web)</option>
+        <option value="json">json (com timestamps)</option>
+        <option value="tsv">tsv (segmentos)</option>
+      </select>
+
+      <button type="submit" class="btn btn--primary">▶ Transcrever</button>
+      <p style="margin-top:12px;color:#888;font-size:0.9em">O arquivo de transcrição será gerado ao lado do arquivo original, com a extensão do formato escolhido.</p>
+    </form>
+  <% } %>
+</div>
+
+<div style="margin-top:24px" class="card">
+  <h2>Arquivos de mídia disponíveis</h2>
+  <% if (arquivos.length === 0) { %>
+    <p>Nenhum arquivo de áudio/vídeo na pasta <code><%= mediaDir %></code>. Adicione arquivos lá (ex: .mp4, .mp3, .wav) para aparecer nesta lista.</p>
+  <% } else { %>
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #ddd">
+          <th style="padding:8px">Arquivo</th>
+          <th style="padding:8px">Tamanho</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% arquivos.forEach((a) => { %>
+          <tr style="border-bottom:1px solid #eee">
+            <td style="padding:8px"><%= a.nome %></td>
+            <td style="padding:8px"><%= a.tamanho %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<%- include('../partials/admin-foot') %>

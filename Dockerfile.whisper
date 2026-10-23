@@ -1,0 +1,23 @@
+# Dockerfile para OpenAI Whisper (transcrição de áudio/vídeo)
+# Baseado no repositório oficial: https://github.com/openai/whisper
+# Variante CPU-only (sem CUDA) para reduzir tamanho da imagem.
+
+FROM python:3.12-slim
+
+# Instala ffmpeg (obrigatório para o Whisper processar áudio/vídeo)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instala o torch na versão CPU-only (muito menor que a com CUDA)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Instala o Whisper (o torch já está instalado, não vai baixar de novo)
+RUN pip install --no-cache-dir openai-whisper
+
+# Diretório de trabalho onde os arquivos de mídia serão montados
+WORKDIR /data
+
+# Entrypoint: o usuário passa o arquivo e opções como argumento
+ENTRYPOINT ["whisper"]
+CMD ["--help"]
