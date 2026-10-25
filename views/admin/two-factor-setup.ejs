@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurar autenticação · Admin GLTechCWB</title>
+  <link rel="stylesheet" href="<%= asset('/css/admin.css') %>" />
+</head>
+<body class="login-page">
+  <main class="login-box">
+    <h1>Ative a verificação em duas etapas</h1>
+    <p class="login-box__subtitle">Escaneie este QR code com o Google Authenticator.</p>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+    <% if (qrCode) { %>
+      <img src="<%= qrCode %>" alt="QR code para configurar o Google Authenticator" width="240" height="240" />
+      <p>Se não puder escanear, adicione esta chave manualmente:</p>
+      <code><%= secret %></code>
+      <form method="POST" action="/admin/2fa/setup">
+        <label>
+          Código de 6 dígitos
+          <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,8}" required autofocus />
+        </label>
+        <button type="submit">Confirmar configuração</button>
+      </form>
+    <% } %>
+  </main>
+</body>
+</html>

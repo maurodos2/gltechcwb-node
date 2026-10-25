@@ -44,7 +44,7 @@
 
       <div class="pdp-meta">
         <% if (product.brand) { %><span>Marca: <strong><%= product.brand %></strong></span><% } %>
-        <span>SKU: <%= product.sku %></span>
+        <span>SKU: <%= product.sku.replace(/^PAU-/i, '') %></span>
       </div>
 
       <% if (product.hasVariants && product.variants.length) { %>

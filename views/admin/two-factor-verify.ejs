@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificação · Admin GLTechCWB</title>
+  <link rel="stylesheet" href="<%= asset('/css/admin.css') %>" />
+</head>
+<body class="login-page">
+  <form class="login-box" method="POST" action="/admin/2fa/verify">
+    <h1>Verificação em duas etapas</h1>
+    <p class="login-box__subtitle">Digite o código do Google Authenticator ou um código de recuperação.</p>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+    <label>
+      Código de verificação
+      <input type="text" name="code" autocomplete="one-time-code" autocapitalize="characters" required autofocus />
+    </label>
+    <button type="submit">Verificar e entrar</button>
+  </form>
+</body>
+</html>

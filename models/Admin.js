@@ -28,6 +28,25 @@ const adminSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecretEncrypted: {
+      type: String,
+      default: '',
+      select: false,
+    },
+    twoFactorPendingSecretEncrypted: {
+      type: String,
+      default: '',
+      select: false,
+    },
+    twoFactorRecoveryCodeHashes: {
+      type: [String],
+      default: [],
+      select: false,
+    },
   },
   { timestamps: true }
 );

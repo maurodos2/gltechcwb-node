@@ -10,6 +10,7 @@ const connectDB = require('./db');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const storage = require('../lib/storage');
+const { cleanSupplierText, cleanSupplierBrand } = require('../lib/supplier-content');
 
 const URLS_PATH = path.join(__dirname, '..', 'migracao', 'urls-pauta.txt');
 const MARGEM = 0.35;
@@ -355,15 +356,19 @@ async function executar(produtos) {
     const imagens = [...new Set(item.imagens || [])].slice(0, MAX_IMAGENS);
     const skuGerado = `PAU-${slugify(p.partNumber).toUpperCase()}`;
     const sku = atual ? atual.sku : skuGerado;
-    const slug = atual ? atual.slug : `${slugify(p.nome).slice(0, 90)}-${p.codigoPauta.toLowerCase()}`;
-    const descricao = p.descricao || `${p.nome}. ${Object.entries(p.specs).filter(([k]) => !/garantia com a pauta/i.test(k)).map(([k, v]) => `${k}: ${v}`).join('. ')}`;
+    const nome = cleanSupplierText(p.nome);
+    const slug = atual ? atual.slug : `${slugify(nome).slice(0, 90)}-${p.codigoPauta.toLowerCase()}`;
+    const descricao = cleanSupplierText(p.descricao || `${nome}. ${Object.entries(p.specs).filter(([k]) => !/garantia com a pauta/i.test(k)).map(([k, v]) => `${k}: ${v}`).join('. ')}`);
+    const specs = Object.fromEntries(Object.entries(normalizarSpecs(p.specs))
+      .map(([k, v]) => [cleanSupplierText(k), cleanSupplierText(v)])
+      .filter(([k, v]) => k && v));
     const payload = {
-      name: p.nome,
+      name: nome,
       slug,
       sku,
       type: 'produto',
       category: categoriaPorSlug.get(p.categoriaSlug)._id,
-      brand: p.marca,
+      brand: cleanSupplierBrand(p.marca),
       price: p.precoVenda,
       cost: p.custo,
       promoPrice: null,
@@ -373,7 +378,7 @@ async function executar(produtos) {
       description: descricao,
       shortDescription: descricao.slice(0, 280),
       images: imagens,
-      specs: normalizarSpecs(p.specs),
+      specs,
       manufacturerRef: { model: p.partNumber, url: p.url, importedAt: new Date() },
       active: true,
     };

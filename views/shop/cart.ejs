@@ -32,7 +32,7 @@
                 <% } %>
                 <div>
                   <div class="cart-product-name"><%= item.name %></div>
-                  <div class="cart-product-sku">SKU: <%= item.sku %></div>
+                  <div class="cart-product-sku">SKU: <%= item.sku.replace(/^PAU-/i, '') %></div>
                 </div>
               </div>
             </td>

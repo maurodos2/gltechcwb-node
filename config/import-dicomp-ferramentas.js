@@ -82,7 +82,7 @@ async function main() {
     {
       name: 'Ferramentas',
       slug: 'ferramentas',
-      description: 'Ferramentas diversas importadas da DICOMP.',
+      description: 'Ferramentas para manutenção, instalação e uso profissional.',
       active: true,
     },
     { upsert: true, new: true }
@@ -103,8 +103,8 @@ async function main() {
       cost: 0,
       promoPrice: null,
       stock: 0,
-      description: `Produto importado da DICOMP para a categoria de ferramentas. Fonte: ${item.url}`,
-      shortDescription: `Ferramenta importada da DICOMP - ${item.brand}.`,
+      description: '',
+      shortDescription: '',
       images: [],
       active: true,
       manufacturerRef: {

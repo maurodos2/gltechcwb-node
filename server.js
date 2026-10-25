@@ -16,6 +16,12 @@ const Category = require('./models/Category');
 const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
+if (isProd && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET deve estar configurada em produção.');
+}
+if (isProd && (!process.env.ADMIN_2FA_ENCRYPTION_KEY || process.env.ADMIN_2FA_ENCRYPTION_KEY.length < 32)) {
+  throw new Error('ADMIN_2FA_ENCRYPTION_KEY deve conter ao menos 32 caracteres em produção.');
+}
 app.set('trust proxy', 1);
 
 // ---- Helpers disponíveis nas views ----
@@ -289,6 +295,7 @@ app.use('/checkout', require('./routes/checkout'));
 
 // ---- Rotas do admin ----
 app.use('/admin/login', loginLimiter);
+app.use('/admin/2fa', loginLimiter);
 app.use('/admin', require('./routes/admin/auth')); // login/logout ficam fora do requireAdminAuth
 app.use('/admin', requireAdminAuth, require('./routes/admin/dashboard'));
 app.use('/admin/products', requireAdminAuth, require('./routes/admin/products'));

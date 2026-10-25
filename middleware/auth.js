@@ -1,7 +1,11 @@
 // Protege rotas do painel admin: exige sessão de admin autenticado.
 function requireAdminAuth(req, res, next) {
-  if (req.session && req.session.adminId) {
+  if (req.session && req.session.adminId && req.session.admin2faVerifiedAt) {
     return next();
+  }
+  if (req.session && req.session.pendingAdminId) {
+    const path = req.session.pendingAdminStep === 'setup' ? '/admin/2fa/setup' : '/admin/2fa/verify';
+    return res.redirect(path);
   }
   return res.redirect('/admin/login');
 }

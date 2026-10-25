@@ -11,6 +11,9 @@ const LEGACY_REDIRECTS = [
   { from: '/index.html', to: '/' },
   { from: '/home', to: '/' },
   { from: '/loja', to: '/produtos' },
+  { from: '/categoria/dicomp', to: '/categoria/produtos' },
+  { from: '/produto/pc-pauta-work-i3-12100-8gb-256gb-freedos-50227', to: '/produto/pc-work-i3-12100-8gb-256gb-freedos-50227' },
+  { from: '/produto/pc-pauta-work-i5-12400-8gb-256gb-freedos-50192', to: '/produto/pc-work-i5-12400-8gb-256gb-freedos-50192' },
 ];
 LEGACY_REDIRECTS.forEach(({ from, to }) => {
   router.get(from, (req, res) => res.redirect(301, to));

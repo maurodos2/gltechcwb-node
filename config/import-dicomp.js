@@ -9,11 +9,12 @@ const mongoose = require('mongoose');
 const connectDB = require('./db');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const { cleanSupplierText, cleanSupplierBrand } = require('../lib/supplier-content');
 
 const DEFAULT_OUTPUT = path.join(__dirname, '../migracao/dicomp-import.json');
 
 function printHelp() {
-  console.log(`Uso:\n  node config/import-dicomp.js --url "https://www.dicomp.com.br/categoria" --limit 20 --max-pages 3\n\nOpções:\n  --url, -u       URL inicial da página de categoria/produtos\n  --limit, -l     quantidade máxima de produtos a importar (padrão: 20)\n  --max-pages     páginas de categoria para percorrer (padrão: 1)\n  --category      nome/slug da categoria no banco (padrão: dicomp)\n  --output        arquivo JSON de saída (padrão: migracao/dicomp-import.json)\n  --csv           salva também em CSV\n  --dry-run       apenas extrai e salva em arquivo, sem gravar no MongoDB\n  --help          exibe esta ajuda\n`);
+  console.log(`Uso:\n  node config/import-dicomp.js --url "https://www.dicomp.com.br/categoria" --limit 20 --max-pages 3\n\nOpções:\n  --url, -u       URL inicial da página de categoria/produtos\n  --limit, -l     quantidade máxima de produtos a importar (padrão: 20)\n  --max-pages     páginas de categoria para percorrer (padrão: 1)\n  --category      nome/slug da categoria no banco (padrão: Produtos)\n  --output        arquivo JSON de saída (padrão: migracao/dicomp-import.json)\n  --csv           salva também em CSV\n  --dry-run       apenas extrai e salva em arquivo, sem gravar no MongoDB\n  --help          exibe esta ajuda\n`);
 }
 
 function parseArgs(argv) {
@@ -21,7 +22,7 @@ function parseArgs(argv) {
     url: '',
     limit: 20,
     maxPages: 1,
-    category: 'dicomp',
+    category: 'Produtos',
     output: DEFAULT_OUTPUT,
     csv: false,
     dryRun: false,
@@ -378,13 +379,15 @@ async function upsertProductsInMongo(products, categoryName) {
 
   await connectDB();
 
-  const categorySlug = slugify(categoryName || 'dicomp');
+  const categoryKey = String(categoryName || 'dicomp');
+  const categoryLabel = cleanSupplierText(categoryKey) || 'Produtos';
+  const categorySlug = slugify(categoryLabel);
   const category = await Category.findOneAndUpdate(
     { slug: categorySlug },
     {
-      name: categoryName || 'DICOMP',
+      name: categoryLabel,
       slug: categorySlug,
-      description: 'Produtos importados automaticamente da DICOMP.',
+      description: categorySlug === 'produtos' ? '' : categoryLabel,
       active: true,
     },
     { upsert: true, new: true }
@@ -392,22 +395,30 @@ async function upsertProductsInMongo(products, categoryName) {
 
   let created = 0;
   let updated = 0;
+  let ignored = 0;
 
   for (const product of products) {
+    const cleanName = cleanSupplierText(product.name);
+    if (/^(?:destaques|inovando o jeito b2b de fazer negócios)$/i.test(cleanName)) {
+      ignored += 1;
+      continue;
+    }
+
     const finalSku = String(product.sku || product.name || `${categorySlug}-${Date.now()}`).trim();
-    const slug = slugify(`${product.name || 'produto'}-${finalSku}`);
+    const slug = slugify(`${cleanName || 'produto'}-${finalSku}`);
+    const description = cleanSupplierText(product.description);
     const payload = {
-      name: product.name || 'Produto DICOMP',
+      name: cleanName || 'Produto',
       slug,
       sku: finalSku,
       type: 'produto',
       category: category._id,
-      brand: product.brand || 'DICOMP',
+      brand: cleanSupplierBrand(product.brand),
       price: Number(product.price || 0),
       cost: 0,
       stock: 0,
-      description: product.description || '',
-      shortDescription: (product.description || '').slice(0, 280),
+      description,
+      shortDescription: description.slice(0, 280),
       images: Array.isArray(product.images) ? product.images : [],
       active: true,
       manufacturerRef: {
@@ -427,7 +438,7 @@ async function upsertProductsInMongo(products, categoryName) {
     }
   }
 
-  console.log(`[Mongo] importados: ${created} criados, ${updated} atualizados.`);
+  console.log(`[Mongo] importados: ${created} criados, ${updated} atualizados, ${ignored} páginas institucionais ignoradas.`);
   await mongoose.disconnect();
 }
 

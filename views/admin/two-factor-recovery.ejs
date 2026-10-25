@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Códigos de recuperação · Admin GLTechCWB</title>
+  <link rel="stylesheet" href="<%= asset('/css/admin.css') %>" />
+</head>
+<body class="login-page">
+  <main class="login-box">
+    <h1>Guarde seus códigos de recuperação</h1>
+    <p class="login-box__subtitle">Cada código é de uso único. Guarde-os em um local seguro.</p>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+    <ul>
+      <% recoveryCodes.forEach((code) => { %><li><code><%= code.match(/.{1,6}/g).join('-') %></code></li><% }) %>
+    </ul>
+    <form method="POST" action="/admin/2fa/recovery/confirm">
+      <label>
+        <input type="checkbox" name="saved" required />
+        Guardei os códigos em um local seguro
+      </label>
+      <button type="submit">Continuar para o painel</button>
+    </form>
+  </main>
+</body>
+</html>
